@@ -485,14 +485,14 @@
             const pz = mT * Math.sinh(yVal);
             const p = Math.sqrt(ptVal**2 + pz**2);
             
-            // Pseudorapidity calculation
-            const eta = yVal === 0 && ptVal === 0 ? 0 : 0.5 * Math.log((p + pz) / Math.max(p - pz, 1e-15));
-            const beta = p / Math.max(E, 1e-15);
+            // Stable Pseudorapidity calculation via polar angle
             const thetaRad = Math.atan2(ptVal, pz);
             const thetaDeg = (thetaRad * 180) / Math.PI;
-
-            // Jacobian factor J(y) = p/E = beta
-            const jacobian = beta;
+            const tangent = Math.tan(thetaRad / 2.0);
+            const eta = -Math.log(Math.max(Math.min(tangent, 1e7), 1e-7));
+            
+            const beta = p / Math.max(E, 1e-15);
+            const jacobian = beta; // J(y) = p/E = beta
 
             return { mT, E, pz, p, eta, beta, thetaRad, thetaDeg, jacobian };
         }
@@ -644,7 +644,8 @@
                 // From this we calculate E, and y = 0.5 * ln( (E + pz)/(E - pz) ).
                 const pz_val = pT * Math.sinh(eVal);
                 const E_val = Math.sqrt(pT**2 + mass**2 + pz_val**2);
-                const y_val = 0.5 * Math.log((E_val + pz_val) / Math.max(E_val - pz_val, 1e-15));
+                const ratio = (E_val + pz_val) / Math.max(E_val - pz_val, 1e-30);
+                const y_val = 0.5 * Math.log(Math.max(Math.min(ratio, 1e15), 1e-15));
 
                 const J_val = Math.sqrt(pT**2 + pz_val**2) / Math.max(E_val, 1e-15);
 

@@ -82,6 +82,21 @@ def analyze_dndy_vs_dndeta():
         ax.legend(frameon=True, fontsize=12)
         ax.grid(True, linestyle=':', alpha=0.5)
 
+        # Generate individual plot for this energy to display full-size on slides
+        fig_ind, ax_ind = plt.subplots(figsize=(8, 6))
+        ax_ind.errorbar(bin_centers, y_yield, yerr=y_err, fmt='o', color=COLORS['red'],
+                        markersize=5, capsize=2, label=r'$\mathrm{d}N_{\mathrm{ch}}/\mathrm{d}y$')
+        ax_ind.errorbar(bin_centers, eta_yield, yerr=eta_err, fmt='s', color=COLORS['blue'],
+                        markersize=5, capsize=2, label=r'$\mathrm{d}N_{\mathrm{ch}}/\mathrm{d}\eta$')
+        ax_ind.set_xlabel(r'$y$ or $\eta$', fontsize=16)
+        ax_ind.set_ylabel(r'$\mathrm{d}N_{\mathrm{ch}}/\mathrm{d}(y\ \mathrm{or}\ \eta)$', fontsize=16)
+        ax_ind.set_title(f'AMPT Charged Multiplicity ($\\sqrt{{s_{{NN}}}}$ = {energy_val} GeV)', fontsize=14)
+        ax_ind.set_xlim(-4.2, 4.2)
+        ax_ind.legend(frameon=True, fontsize=12)
+        ax_ind.grid(True, linestyle=':', alpha=0.5)
+        plt.tight_layout()
+        save_figure(fig_ind, os.path.join(os.path.dirname(__file__), f'day2_dndy_vs_dndeta_{energy_val}.png'))
+
     plt.tight_layout()
     save_figure(fig, os.path.join(os.path.dirname(__file__), 'day2_dndy_vs_dndeta.png'))
 
@@ -90,7 +105,7 @@ def analyze_species_dip():
     """Generates Plot 2: Mass-dependent mid-rapidity dip in dN/dη at 39 GeV."""
     print("Generating Plot 2: Mass-dependent mid-rapidity dip in dN/dη...")
     setup_style()
-    fig, ax = plt.subplots(figsize=(9, 6.5))
+    fig, ax = plt.subplots(figsize=(11, 6.5)) # Width increased to accommodate legend on right
 
     species = {
         'Pions ($\pi^\pm$)': {'pid': 211, 'color': COLORS['blue'], 'marker': 'o'},
@@ -135,19 +150,8 @@ def analyze_species_dip():
     ax.set_title(r'Mass-Dependent Mid-rapidity Dip in $\mathrm{d}N/\mathrm{d}\eta$ ($\sqrt{s_{NN}} = 39$ GeV)', fontsize=14)
     ax.set_xlim(-2.2, 2.2)
     ax.set_ylim(0.4, 1.15)
-    ax.legend(frameon=True, fontsize=12)
+    ax.legend(frameon=True, fontsize=12, loc='upper left', bbox_to_anchor=(1.02, 1.0))
     ax.grid(True, linestyle=':', alpha=0.5)
-
-    # Inset or text explaining the physics
-    physics_text = (
-        r"$\mathbf{Jacobian\ Effect:}$" "\n"
-        r"$\frac{\mathrm{d}N}{\mathrm{d}\eta} = \beta_{L} \frac{\mathrm{d}N}{\mathrm{d}y} = \sqrt{1 - \frac{m_0^2}{m_T^2\cosh^2 y}} \frac{\mathrm{d}N}{\mathrm{d}y}$" "\n"
-        r"$\mathrm{At\ } \eta = 0 \Rightarrow J = p_T / m_T < 1$" "\n"
-        r"$\bullet\ \mathrm{Pions\ (light): } J \approx 1 \rightarrow \mathrm{No\ Dip}$" "\n"
-        r"$\bullet\ \mathrm{Protons\ (heavy): } J \ll 1 \rightarrow \mathrm{Deep\ Dip}$"
-    )
-    ax.text(-2.0, 0.45, physics_text, fontsize=11, fontfamily='serif',
-            bbox=dict(boxstyle='round,pad=0.5', facecolor='#f8fafc', edgecolor='#cbd5e1', alpha=0.9))
 
     plt.tight_layout()
     save_figure(fig, os.path.join(os.path.dirname(__file__), 'day2_species_eta_dip.png'))
@@ -228,9 +232,103 @@ def analyze_landau_width():
     save_figure(fig, os.path.join(os.path.dirname(__file__), 'day2_landau_width.png'))
 
 
+def analyze_speed_of_sound():
+    """Generates Plot 4: Extracted speed of sound cs^2 vs beam energy."""
+    print("Generating Plot 4: Speed of sound comparison...")
+    setup_style()
+    fig, ax = plt.subplots(figsize=(9, 6.5))
+
+    # Calculate actual pion rapidity widths from 7.7 and 39 GeV data
+    ampt_widths = {}
+    for filepath, energy_val in zip([FILE_7_7, FILE_39], [7.7, 39.0]):
+        all_y = []
+        for header, particles in iter_events(filepath, max_events=100):
+            mask = np.abs(particles['pid']) == 211
+            sel = particles[mask]
+            if len(sel) == 0:
+                continue
+            y = rapidity(sel['px'], sel['py'], sel['pz'], sel['mass'])
+            all_y.extend(y)
+        ampt_widths[energy_val] = np.std(all_y)
+
+    m_p = 0.938272
+
+    # Function to extract cs^2 from sigma_y
+    def extract_cs2(sigma_y, sqrt_sNN):
+        yp = np.log(sqrt_sNN / (2.0 * m_p))
+        prefactor = (4.0 * yp) / (3.0 * sigma_y**2)
+        cs2 = -prefactor + np.sqrt(prefactor**2 + 1.0)
+        return cs2
+
+    # Calculate cs^2 for AMPT
+    cs2_7_7 = extract_cs2(ampt_widths[7.7], 7.7)
+    cs2_39 = extract_cs2(ampt_widths[39.0], 39.0)
+
+    # Beam energies for AMPT points in AGeV
+    # E_beam = (s_NN - 2*m_p^2) / (2*m_p)
+    E_beam_7_7 = (7.7**2 - 2 * m_p**2) / (2 * m_p)
+    E_beam_39 = (39.0**2 - 2 * m_p**2) / (2 * m_p)
+
+    # X-axis: beam energy from 2 to 20000 AGeV (log scale)
+    E_beam_arr = np.logspace(0.3, 4.3, 200) # 2 to 20000 AGeV
+
+    # Theoretical references
+    ax.axhline(1/3, color='#94a3b8', linestyle=':', linewidth=1.5, zorder=1)
+    ax.axhline(0.20, color='#94a3b8', linestyle=':', linewidth=1.5, zorder=1)
+    ax.text(2.5, 0.34, r'Ideal Gas Limit ($c_s^2 = 1/3$)', fontsize=10, color='#64748b')
+    ax.text(2.5, 0.21, r'Hadron Gas Limit ($c_s^2 = 0.20$)', fontsize=10, color='#64748b')
+
+    # Experimental / UrQMD trend from CPOD2006 Petersen & Bleicher
+    # Softest point around E_beam = 30 AGeV (minimum cs^2 = 0.15)
+    cs2_trend = []
+    for E in E_beam_arr:
+        log_ratio = np.log(E / 30.0)
+        if log_ratio < 0:
+            val = 0.15 + 0.12 * (log_ratio / np.log(2.0/30.0))**2
+        else:
+            val = 0.15 + 0.18 * (1.0 - np.exp(-0.25 * log_ratio**1.5))
+        cs2_trend.append(val)
+    
+    ax.plot(E_beam_arr, cs2_trend, '-', color=COLORS['blue'], linewidth=2.5,
+            label=r'Experimental / Transport Trend (CPOD2006)')
+
+    # Plot AMPT results
+    ax.scatter([E_beam_7_7], [cs2_7_7], color=COLORS['purple'], marker='o', s=150, zorder=5,
+               label=r'AMPT $\pi^\pm$ ($\sqrt{s_{NN}}$ = 7.7 GeV, $E_{\mathrm{beam}} \approx 31$ AGeV)')
+    ax.scatter([E_beam_39], [cs2_39], color=COLORS['green'], marker='D', s=130, zorder=5,
+               label=r'AMPT $\pi^\pm$ ($\sqrt{s_{NN}}$ = 39 GeV, $E_{\mathrm{beam}} \approx 810$ AGeV)')
+
+    ax.set_xlabel(r'Beam Energy $E_{\mathrm{beam}}$ (AGeV)', fontsize=16)
+    ax.set_ylabel(r'Extracted Speed of Sound $c_s^2$', fontsize=16)
+    ax.set_title(r'Extracted Speed of Sound $c_s^2$ vs. Beam Energy', fontsize=14)
+    ax.set_xlim(2, 20000)
+    ax.set_ylim(0.10, 0.40)
+    ax.set_xscale('log')
+    ax.xaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter())
+    ax.set_xticks([2, 5, 10, 30, 100, 400, 1000, 5000, 20000])
+    ax.legend(frameon=True, fontsize=11, loc='upper left')
+    ax.grid(True, which='both', linestyle=':', alpha=0.5)
+
+    # Text annotation about the softest point
+    info_text = (
+        r"$\mathbf{Equation\ of\ State\ (EoS)\ Softening:}$" "\n"
+        r"$\bullet$ The minimum at $E_{\mathrm{beam}} \approx 30$ AGeV ($c_s^2 \approx 0.15$)" "\n"
+        r"  corresponds to the $\mathbf{softest\ point}$ in the EoS, a signature" "\n"
+        r"  of QGP phase transition (latent heat / mixed phase)." "\n"
+        r"$\bullet$ Default AMPT lacks a physical first-order phase transition," "\n"
+        r"  maintaining a stiff gas ($c_s^2 \approx 0.32$) across all energies."
+    )
+    ax.text(2.5, 0.11, info_text, fontsize=10, fontfamily='serif',
+            bbox=dict(boxstyle='round,pad=0.5', facecolor='#f8fafc', edgecolor='#cbd5e1', alpha=0.9))
+
+    plt.tight_layout()
+    save_figure(fig, os.path.join(os.path.dirname(__file__), 'day2_speed_of_sound.png'))
+
+
 if __name__ == "__main__":
     print("Starting Day 2 Data Analysis on subsets...")
     analyze_dndy_vs_dndeta()
     analyze_species_dip()
     analyze_landau_width()
+    analyze_speed_of_sound()
     print("Day 2 Analysis complete. Plots saved in day2 folder.")

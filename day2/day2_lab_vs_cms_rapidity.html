@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 2: Lab vs. Center-of-Mass Frame Boost Simulator</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0b0f19;
+            color: #f8fafc;
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 1300px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            margin-top: 20px;
+        }
+        @media (min-width: 950px) {
+            .container {
+                grid-template-columns: 0.85fr 1.15fr;
+            }
+        }
+        .panel {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+        }
+        .header-panel {
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.12) 0%, rgba(99, 102, 241, 0.15) 100%);
+            border: 1px solid rgba(236, 72, 153, 0.2);
+            text-align: left;
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 12px;
+        }
+        .header-panel h1 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(to right, #cbd5e1, #f472b6, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        .header-panel p {
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .control-group {
+            margin-bottom: 20px;
+        }
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #cbd5e1;
+        }
+        .control-label span.value {
+            font-family: 'JetBrains Mono', monospace;
+            color: #f472b6;
+            font-weight: 700;
+            font-size: 16px;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #1e293b;
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #f472b6;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(244, 114, 182, 0.5);
+            transition: transform 0.1s, background-color 0.1s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+            background: #818cf8;
+        }
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        button.preset-btn {
+            background: rgba(255, 255, 255, 0.05);
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 8px 4px;
+            font-size: 11px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        button.preset-btn:hover, button.preset-btn.active {
+            background: rgba(244, 114, 182, 0.15);
+            color: #f472b6;
+            border-color: #f472b6;
+            transform: translateY(-1px);
+        }
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button.action-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: none;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(236, 72, 153, 0.3);
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #f472b6 0%, #ec4899 100%);
+            transform: translateY(-1px);
+        }
+        .btn-pause {
+            background: #d97706;
+            color: white;
+            box-shadow: 0 4px 14px rgba(217, 119, 6, 0.3);
+        }
+        .btn-pause:hover:not(:disabled) {
+            background: #f59e0b;
+            transform: translateY(-1px);
+        }
+        .btn-pause:disabled {
+            background: #334155;
+            color: #64748b;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        .btn-reset {
+            background: #475569;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-reset:hover {
+            background: #64748b;
+            transform: translateY(-1px);
+        }
+        .status-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 8px 0 16px 0;
+            font-size: 13px;
+            color: #94a3b8;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #475569;
+            transition: all 0.3s ease;
+        }
+        .status-dot.active {
+            background-color: #e11d48;
+            box-shadow: 0 0 10px #e11d48;
+            animation: sweep-pulse 1.5s infinite;
+        }
+        .status-dot.paused {
+            background-color: #f59e0b;
+            box-shadow: 0 0 10px #f59e0b;
+        }
+        @keyframes sweep-pulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+        .metric-card h4 {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+        }
+        .metric-card p {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            color: #f472b6;
+        }
+        .metric-card.highlight {
+            grid-column: span 2;
+            border: 1px solid rgba(244, 114, 182, 0.25);
+            background: rgba(244, 114, 182, 0.03);
+        }
+        .metric-card.highlight p {
+            color: #10b981;
+            font-size: 16px;
+        }
+        .info-panel {
+            margin-top: 20px;
+            border-left: 4px solid #f472b6;
+            background: rgba(244, 114, 182, 0.05);
+            padding: 16px;
+            border-radius: 0 12px 12px 0;
+        }
+        .info-panel h3 {
+            font-size: 15px;
+            color: #f472b6;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .info-panel ul {
+            list-style-type: none;
+            font-size: 13px;
+            color: #cbd5e1;
+            line-height: 1.6;
+        }
+        .info-panel li {
+            margin-bottom: 6px;
+            position: relative;
+            padding-left: 18px;
+        }
+        .info-panel li::before {
+            content: "•";
+            color: #f472b6;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            font-size: 18px;
+            top: -2px;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+        .visual-card {
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        .visual-card h3 {
+            font-size: 15px;
+            color: #a5b4fc;
+            margin-bottom: 12px;
+            align-self: flex-start;
+            font-weight: 600;
+            border-left: 3px solid #f472b6;
+            padding-left: 8px;
+        }
+        canvas {
+            background: #090d16;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Control Panel -->
+        <div class="panel">
+            <div class="header-panel">
+                <h1>🌐 Lab vs. CMS Boost Simulator</h1>
+                <p>Relativistic frame comparison: Apply a longitudinal Lorentz boost to a symmetric particle spray and watch the difference. Observe how the rapidity distribution shifts rigidly as a solid block (additivity: $y' = y - y_b$), whereas pseudorapidity deforms and skews!</p>
+            </div>
+
+            <!-- Frame presets -->
+            <div class="control-group">
+                <label class="control-label">Standard Frame Presets</label>
+                <div class="preset-grid">
+                    <button class="preset-btn active" id="btn-cms" onclick="setPresetBoost(0.0)">Center-of-Mass (β = 0)</button>
+                    <button class="preset-btn" id="btn-lab" onclick="setPresetBoost(0.85)">Lab / Fixed-Target (β = 0.85)</button>
+                    <button class="preset-btn" id="btn-asym" onclick="setPresetBoost(-0.5)">Asymmetric Collider (β = -0.5)</button>
+                </div>
+            </div>
+
+            <!-- Boost velocity slider -->
+            <div class="control-group">
+                <div class="control-label">
+                    <label for="boostSlider">Frame Boost Velocity (β<sub>boost</sub> = v/c)</label>
+                    <span class="value" id="boostDisplay">0.00</span>
+                </div>
+                <input type="range" id="boostSlider" min="-0.95" max="0.95" step="0.02" value="0.00"
+                       oninput="manualUpdateBoost(this.value)">
+            </div>
+
+            <!-- Animation Controls -->
+            <div class="button-group">
+                <button id="btn-animate" class="action-btn btn-primary" onclick="toggleAnimation()"><span>▶</span> Play Boost Scan</button>
+                <button id="btn-pause" class="action-btn btn-pause" onclick="togglePause()" disabled><span>⏸</span> Pause</button>
+                <button class="action-btn btn-reset" onclick="resetExplorer()"><span>🔄</span> Reset</button>
+            </div>
+
+            <div class="control-group" style="margin-top: 5px;">
+                <label for="speedSelect" class="control-label" style="margin-bottom: 6px;">Sweep Speed</label>
+                <select id="speedSelect" onchange="updateSpeed(this.value)" style="width: 100%; padding: 10px 14px; background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #f8fafc; font-family: 'Outfit', sans-serif; font-size: 13px; outline: none; cursor: pointer;">
+                    <option value="0.5">0.5x Speed (Slow Sweep)</option>
+                    <option value="1" selected>1.0x Speed (Normal Sweep)</option>
+                    <option value="2">2.0x Speed (Fast Sweep)</option>
+                </select>
+            </div>
+
+            <div class="status-container">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">SCAN IDLE</span>
+            </div>
+
+            <!-- Live Metrics -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h4>Boost Rapidity (y<sub>b</sub>)</h4>
+                    <p id="metric-yb">0.000</p>
+                </div>
+                <div class="metric-card">
+                    <h4>Lorentz Factor (γ<sub>boost</sub>)</h4>
+                    <p id="metric-gamma">1.000</p>
+                </div>
+                <div class="metric-card highlight">
+                    <h4>Rapidity Additivity Status</h4>
+                    <p id="metric-status">Boost-Invariant Yield Shape: y' = y - y_b</p>
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <h3>Key Physical Takeaways:</h3>
+                <ul>
+                    <li><strong>Rapidity Additivity</strong>: Under a longitudinal boost, $y' = y - y_b$. This translates the entire rapidity distribution $dN/dy$ left or right like a rigid body, preserving its width and shape.</li>
+                    <li><strong>Pseudorapidity Deformation</strong>: Pseudorapidity $\eta$ does not transform linearly because polar angle $\theta$ transforms non-linearly. The distribution $dN/d\eta$ skews and changes peak heights under boosts.</li>
+                    <li><strong>Lorentz Beaming</strong>: Observe on the canvas how particles bunch forward (to the right for $\beta > 0$) as the boost increases. This is the relativistic searchlight effect!</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Visualization Panel -->
+        <div class="dashboard-grid">
+            <div class="visual-card">
+                <h3>⚛ Relativistic Particle Spray (Longitudinal Vector View)</h3>
+                <canvas id="sprayCanvas" width="500" height="300"></canvas>
+            </div>
+            <div class="visual-card">
+                <h3>📈 Rapidity Distribution dN/dy' (Rigid Solid Shift)</h3>
+                <div id="yPlot" style="width: 100%; height: 220px;"></div>
+            </div>
+            <div class="visual-card">
+                <h3>📊 Pseudorapidity Distribution dN/dη' (Skew & Deformation)</h3>
+                <div id="etaPlot" style="width: 100%; height: 220px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('sprayCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Generate 60 mock particles in CMS frame
+        // They follow a Gaussian rapidity distribution with sigma = 1.0, and uniform pT.
+        const particles = [];
+        const numParticles = 60;
+        const mass = 0.13957; // pions
+
+        // Seed random number generator for reproducibility
+        let seed = 12345;
+        function random() {
+            let x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        }
+
+        function randomGaussian(mean, std) {
+            let u = 0, v = 0;
+            while(u === 0) u = random();
+            while(v === 0) v = random();
+            let num = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+            return num * std + mean;
+        }
+
+        // Initialize particles in CMS
+        for (let i = 0; i < numParticles; i++) {
+            const y_cms = randomGaussian(0, 1.1);
+            const pT = 0.1 + random() * 0.5; // pT between 0.1 and 0.6 GeV
+            const phi = random() * 2 * Math.PI;
+            
+            const mT = Math.sqrt(pT**2 + mass**2);
+            const E_cms = mT * Math.cosh(y_cms);
+            const pz_cms = mT * Math.sinh(y_cms);
+
+            particles.push({ y_cms, pT, pz_cms, E_cms, mT });
+        }
+
+        // Active boost state
+        let betaBoost = 0.0;
+        let yb = 0.0;
+        let gammaBoost = 1.0;
+        let animationSpeed = 1.0;
+        let isAnimating = false;
+        let isPaused = false;
+        let animationInterval = null;
+        let boostDirection = 1; // 1 = increasing, -1 = decreasing
+
+        function updateBoostValues(val) {
+            betaBoost = parseFloat(val);
+            gammaBoost = 1 / Math.sqrt(1 - betaBoost**2);
+            yb = 0.5 * Math.log((1 + betaBoost) / Math.max(1 - betaBoost, 1e-15));
+
+            document.getElementById('boostDisplay').textContent = betaBoost.toFixed(2);
+            document.getElementById('boostSlider').value = val;
+            
+            // Highlight frame preset active button
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+            if (betaBoost === 0.0) {
+                document.getElementById('btn-cms').classList.add('active');
+            } else if (betaBoost === 0.85) {
+                document.getElementById('btn-lab').classList.add('active');
+            } else if (betaBoost === -0.50) {
+                document.getElementById('btn-asym').classList.add('active');
+            }
+        }
+
+        function manualUpdateBoost(val) {
+            stopAnimation();
+            updateBoostValues(val);
+            updateSimulation();
+        }
+
+        function setPresetBoost(val) {
+            stopAnimation();
+            updateBoostValues(val);
+            updateSimulation();
+        }
+
+        function calculateBoostedKinematics(p, y_b) {
+            const y_boosted = p.y_cms - y_b; // Rapidity additivity: y' = y_cms - y_boost
+            const E_boosted = p.mT * Math.cosh(y_boosted);
+            const pz_boosted = p.mT * Math.sinh(y_boosted);
+            const p_total = Math.sqrt(p.pT**2 + pz_boosted**2);
+
+            // Stable pseudorapidity
+            const thetaRad = Math.atan2(p.pT, pz_boosted);
+            const tangent = Math.tan(thetaRad / 2.0);
+            const eta_boosted = -Math.log(Math.max(Math.min(tangent, 1e7), 1e-7));
+
+            return { y_boosted, pz_boosted, E_boosted, eta_boosted, thetaRad };
+        }
+
+        function drawSpray() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#090d16';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const cX = canvas.width / 2;
+            const cY = canvas.height / 2;
+            const lengthScale = 120; // scale factor to draw vectors
+
+            // Draw center reference line
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(cX, 10);
+            ctx.lineTo(cX, canvas.height - 10);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.font = '8px JetBrains Mono, monospace';
+            ctx.fillText('MID-RAPIDITY (y=0)', cX - 45, 20);
+
+            // Draw beam pipe
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(10, cY);
+            ctx.lineTo(canvas.width - 10, cY);
+            ctx.stroke();
+            ctx.fillText('BEAM LINE (z)', canvas.width - 80, cY + 12);
+
+            // Draw each boosted particle vector
+            particles.forEach(p => {
+                const b = calculateBoostedKinematics(p, yb);
+                
+                // Draw vector line from origin
+                // x maps to z momentum (longitudinal), y maps to pT (transverse)
+                // We draw top half for positive pT, and random direction
+                const endX = cX + (bz = b.pz_boosted) * lengthScale;
+                // Transverse component is always positive, but we plot half going up and half going down
+                const sign = (p.y_cms * 1000 % 2 > 1) ? 1 : -1;
+                const endY = cY - p.pT * lengthScale * sign;
+
+                ctx.strokeStyle = 'rgba(244, 114, 182, 0.6)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(cX, cY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+
+                // Draw tiny particle dot at vector end
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(endX, endY, 2.5, 0, 2*Math.PI);
+                ctx.fill();
+            });
+
+            // Draw collision point
+            ctx.fillStyle = '#ec4899';
+            ctx.beginPath();
+            ctx.arc(cX, cY, 6, 0, 2*Math.PI);
+            ctx.fill();
+        }
+
+        function updatePlots() {
+            const y_boosted_arr = [];
+            const eta_boosted_arr = [];
+
+            // Calculate boosted values for all particles
+            particles.forEach(p => {
+                const b = calculateBoostedKinematics(p, yb);
+                y_boosted_arr.push(b.y_boosted);
+                eta_boosted_arr.push(b.eta_boosted);
+            });
+
+            // Plot 1: dN/dy'
+            const yBins = np_histogram_centers_counts(y_boosted_arr, -4.5, 4.5, 30);
+            
+            const traceY = {
+                x: yBins.centers,
+                y: yBins.counts,
+                type: 'bar',
+                name: "dN/dy'",
+                marker: { color: 'rgba(239, 68, 68, 0.75)', line: { color: '#ef4444', width: 1 } }
+            };
+
+            const layoutY = {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                template: 'plotly_dark',
+                margin: { t: 10, b: 30, l: 40, r: 15 },
+                xaxis: { title: "Rapidity y'", gridcolor: '#1e293b', linecolor: '#334155', range: [-4.5, 4.5] },
+                yaxis: { title: 'Counts', gridcolor: '#1e293b', linecolor: '#334155', range: [0, 18] },
+                showlegend: false
+            };
+
+            Plotly.newPlot('yPlot', [traceY], layoutY, { responsive: true, displayModeBar: false });
+
+            // Plot 2: dN/deta'
+            const etaBins = np_histogram_centers_counts(eta_boosted_arr, -4.5, 4.5, 30);
+
+            const traceEta = {
+                x: etaBins.centers,
+                y: etaBins.counts,
+                type: 'bar',
+                name: "dN/dη'",
+                marker: { color: 'rgba(56, 189, 248, 0.75)', line: { color: '#38bdf8', width: 1 } }
+            };
+
+            const layoutEta = {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                template: 'plotly_dark',
+                margin: { t: 10, b: 30, l: 40, r: 15 },
+                xaxis: { title: "Pseudorapidity η'", gridcolor: '#1e293b', linecolor: '#334155', range: [-4.5, 4.5] },
+                yaxis: { title: 'Counts', gridcolor: '#1e293b', linecolor: '#334155', range: [0, 18] },
+                showlegend: false
+            };
+
+            Plotly.newPlot('etaPlot', [traceEta], layoutEta, { responsive: true, displayModeBar: false });
+        }
+
+        // Helper to mimic NumPy histogram
+        function np_histogram_centers_counts(data, min, max, nbins) {
+            const counts = new Array(nbins).fill(0);
+            const step = (max - min) / nbins;
+            
+            data.forEach(val => {
+                if (val >= min && val <= max) {
+                    const binIdx = Math.floor((val - min) / step);
+                    const idx = Math.min(binIdx, nbins - 1);
+                    counts[idx]++;
+                }
+            });
+
+            const centers = [];
+            for (let i = 0; i < nbins; i++) {
+                centers.push(min + (i + 0.5) * step);
+            }
+
+            return { centers, counts };
+        }
+
+        function updateSimulation() {
+            // Update Metrics Cards
+            document.getElementById('metric-yb').textContent = yb.toFixed(3);
+            document.getElementById('metric-gamma').textContent = gammaBoost.toFixed(3);
+
+            let status_text = "";
+            if (betaBoost === 0.0) {
+                status_text = "CMS Frame (Symmetric Distribution around y=0)";
+            } else {
+                status_text = `Boosted Frame: y' shape is identical but shifted by ${yb.toFixed(2)}`;
+            }
+            document.getElementById('metric-status').textContent = status_text;
+
+            drawSpray();
+            updatePlots();
+        }
+
+        // Live draw ticks
+        setInterval(drawSpray, 100);
+
+        // Animation Scan loop for boost
+        function toggleAnimation() {
+            if (isAnimating) {
+                stopAnimation();
+            } else {
+                startAnimation();
+            }
+        }
+
+        function startAnimation() {
+            isAnimating = true;
+            isPaused = false;
+            updateStatus('running');
+            document.getElementById('btn-animate').innerHTML = `<span>⏹</span> Stop Scan`;
+            document.getElementById('btn-animate').style.background = "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
+            document.getElementById('btn-pause').disabled = false;
+            document.getElementById('btn-pause').innerHTML = `<span>⏸</span> Pause`;
+            document.getElementById('btn-pause').style.background = "#d97706";
+
+            if (animationInterval) clearInterval(animationInterval);
+
+            // Loop betaBoost between -0.85 and 0.85
+            animationInterval = setInterval(() => {
+                if (isPaused) return;
+
+                let step = 0.03 * animationSpeed;
+                betaBoost += step * boostDirection;
+
+                if (betaBoost >= 0.85) {
+                    betaBoost = 0.85;
+                    boostDirection = -1;
+                } else if (betaBoost <= -0.85) {
+                    betaBoost = -0.85;
+                    boostDirection = 1;
+                }
+
+                updateBoostValues(betaBoost);
+                updateSimulation();
+            }, 40);
+        }
+
+        function stopAnimation() {
+            isAnimating = false;
+            isPaused = false;
+            updateStatus('idle');
+            if (animationInterval) clearInterval(animationInterval);
+            document.getElementById('btn-animate').innerHTML = `<span>▶</span> Play Boost Scan`;
+            document.getElementById('btn-animate').style.background = "linear-gradient(135deg, #ec4899 0%, #a855f7 100%)";
+            document.getElementById('btn-pause').disabled = true;
+            document.getElementById('btn-pause').innerHTML = `<span>⏸</span> Pause`;
+            document.getElementById('btn-pause').style.background = "#334155";
+        }
+
+        function togglePause() {
+            if (!isAnimating) return;
+            isPaused = !isPaused;
+            if (isPaused) {
+                updateStatus('paused');
+                document.getElementById('btn-pause').innerHTML = `<span>▶</span> Resume`;
+                document.getElementById('btn-pause').style.background = "#16a34a";
+            } else {
+                updateStatus('running');
+                document.getElementById('btn-pause').innerHTML = `<span>⏸</span> Pause`;
+                document.getElementById('btn-pause').style.background = "#d97706";
+            }
+        }
+
+        function updateSpeed(val) {
+            animationSpeed = parseFloat(val);
+        }
+
+        function updateStatus(state) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            if (!dot || !text) return;
+            dot.className = 'status-dot';
+            if (state === 'running') {
+                dot.classList.add('active');
+                text.textContent = 'SWEEP ACTIVE';
+            } else if (state === 'paused') {
+                dot.classList.add('paused');
+                text.textContent = 'SWEEP PAUSED';
+            } else {
+                text.textContent = 'SWEEP IDLE';
+            }
+        }
+
+        function resetExplorer() {
+            stopAnimation();
+            updateBoostValues(0.0);
+            updateSimulation();
+        }
+
+        // Initial setup
+        updateBoostValues(0.0);
+        updateSimulation();
+    </script>
+</body>
+</html>
