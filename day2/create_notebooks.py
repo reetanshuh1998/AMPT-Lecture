@@ -493,10 +493,6 @@ def generate_notebooks():
             "ax.set_ylim(0.4, 1.15)\n",
             "ax.grid(True, linestyle=':', alpha=0.5)\n",
             "ax.legend(frameon=True, fontsize=11)\n",
-            "try:\n",
-            "    plt.tight_layout()\n",
-            "except Exception:\n",
-            "    pass\n",
             "plt.show()"
         ]
     })
