@@ -390,17 +390,29 @@
 \end{frame}
 
 % Slide 17: Proof of Rapidity Additivity
-\begin{frame}{Proof of Rapidity Additivity}
-    \begin{block}{Algebraic Derivation}
+\begin{frame}{Proof of Rapidity Additivity: Mathematical Derivation}
+    \begin{block}{Hyperbolic Angle Transformations (Sahoo pg. 117-118)}
         Let $y_1 = \tanh^{-1}(u/c)$ and $y_2 = \tanh^{-1}(v/c)$ represent two collinear boosts (taking $c=1$):
         \[ w = \frac{u+v}{1 + uv} = \frac{\tanh y_1 + \tanh y_2}{1 + \tanh y_1 \tanh y_2} \]
-        Using the hyperbolic tangent addition identity:
-        \[ \tanh(y_1 + y_2) = \frac{\tanh y_1 + \tanh y_2}{1 + \tanh y_1 \tanh y_2} \]
-        We immediately obtain:
-        \[ w = \tanh(y_1 + y_2) \quad \Rightarrow \quad y_{\text{tot}} = y_1 + y_2 \quad (\text{Sahoo Eq. 5.43}) \]
     \end{block}
-    \begin{alertblock}{Takeaway}
-        Rapidity turns non-linear velocity boosts into simple linear additions, making it the most natural variable for longitudinal collider spectroscopy.
+    \begin{block}{The Hyperbolic Tangent Identity}
+        Recalling the standard hyperbolic tangent angle-addition identity:
+        \[ \tanh(y_1 + y_2) = \frac{\tanh y_1 + \tanh y_2}{1 + \tanh y_1 \tanh y_2} \]
+        Which gives us the combined velocity parameter:
+        \[ w = \tanh(y_1 + y_2) \]
+    \end{block}
+\end{frame}
+
+% Slide 18: Rapidity Additivity: Physical Consequences
+\begin{frame}{Rapidity Additivity: Physical Consequences}
+    \begin{block}{Proving Linear Additivity (Sahoo Eq. 5.43)}
+        Since the effective relativistic velocity boost is $w = \tanh(y_{\text{tot}})$, substituting our derivation yields:
+        \[ \tanh(y_{\text{tot}}) = \tanh(y_1 + y_2) \quad \Rightarrow \quad y_{\text{tot}} = y_1 + y_2 \]
+        This simple, elegant relation proves that collinear boosts combine linearly under rapidity!
+    \end{block}
+    \begin{alertblock}{Takeaway: Natural Collider Spectroscopy Variable}
+        * **Velocity Addition** is highly non-linear, making cross-frame spectrum transformations mathematically complex.
+        * **Rapidity Addition** is linear. Boosts along the beam axis simply shift the rapidity distribution by a constant ($y \rightarrow y + y_{\text{boost}}$), keeping the shape of the invariant yield distribution $dN/dy$ perfectly invariant!
     \end{alertblock}
 \end{frame}
 
@@ -449,18 +461,29 @@
 
 \section{Coordinates}
 
-% Slide 21: Spacetime Evolution Stages of Heavy-Ion Collisions
+% Slide 22: Spacetime Evolution Stages of Heavy-Ion Collisions
 \begin{frame}{Spacetime Evolution Stages of Heavy-Ion Collisions}
-    \begin{block}{Dynamical Stages (Sahoo Fig. 5.7)}
-        Relativistic collisions evolve through highly distinct physical epochs:
-    \end{block}
-    \begin{enumerate}
-        \item **Initial Collision (Glasma Phase):** Extreme gluon fields at $t \approx 0$ fm/c.
-        \item **Pre-Equilibrium \& Thermalization:** Rapid interaction creates a deconfined system.
-        \item **Viscous Relativistic Hydrodynamics:** Strongly coupled QGP expands as a relativistic fluid ($0.5 < t < 10$ fm/c).
-        \item **Hadronization:** Fluid cools to a hadron gas at critical temperature $T_c \approx 155$ MeV.
-        \item **Hadronic Gas Transport (ART):** Hadrons collide, scatter, and freeze out.
-    \end{enumerate}
+    \begin{columns}
+        \begin{column}{0.5\textwidth}
+            \begin{block}{Dynamical Stages (Sahoo Fig. 5.7)}
+                Relativistic collisions evolve through highly distinct physical epochs:
+            \end{block}
+            \begin{enumerate}
+                \tiny
+                \item **Initial Collision (Glasma Phase):** Extreme gluon fields at $t \approx 0$ fm/c.
+                \item **Pre-Equilibrium \& Thermalization:** Rapid interaction creates a deconfined system.
+                \item **Viscous Relativistic Hydrodynamics:** Strongly coupled QGP expands as a fluid ($0.5 < t < 10$ fm/c).
+                \item **Hadronization:** Fluid cools to a hadron gas at critical temperature $T_c \approx 155$ MeV.
+                \item **Hadronic Gas Transport (ART):** Hadrons collide, scatter, and freeze out.
+            \end{enumerate}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{block}{Chronological Spacetime Diagram}
+                \centering
+                \includegraphics[width=0.95\textwidth]{plots/sahoo_fig5.7.png}
+            \end{block}
+        \end{column}
+    \end{columns}
 \end{frame}
 
 % Slide 22: Coordinate Mappings: Light-Cone Momentum Variables
