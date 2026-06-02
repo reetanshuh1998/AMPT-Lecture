@@ -334,7 +334,7 @@
                 <label class="control-label">Particle Species (Mass Selector)</label>
                 <div class="preset-grid">
                     <button class="preset-btn active" id="btn-pi" onclick="setSpecies('pi')">Pion (0.14 GeV)</button>
-                    <button class="preset-btn" id="btn-k" onclick="setSpecies('K')">Kaon (0.49 GeV)</button>
+                    <button class="preset-btn" id="btn-K" onclick="setSpecies('K')">Kaon (0.49 GeV)</button>
                     <button class="preset-btn" id="btn-p" onclick="setSpecies('p')">Proton (0.94 GeV)</button>
                     <button class="preset-btn" id="btn-heavy" onclick="setSpecies('heavy')">Omega (1.67 GeV)</button>
                 </div>
@@ -651,7 +651,7 @@
 
                 const J_val = Math.sqrt(pT**2 + pz_val**2) / Math.max(E_val, 1e-15);
 
-                const dNdy_val = Math.exp(-y_val**2 / (2 * sigma_y**2));
+                const dNdy_val = Math.exp(-(y_val * y_val) / (2 * sigma_y**2));
                 const dNdeta_val = J_val * dNdy_val;
 
                 dNdyArr.push(dNdy_val);
@@ -659,7 +659,7 @@
             }
 
             // Also find current y / eta densities
-            const current_dNdy = Math.exp(-y**2 / (2 * sigma_y**2));
+            const current_dNdy = Math.exp(-(y * y) / (2 * sigma_y**2));
             const current_dNdeta = phys.jacobian * current_dNdy;
 
             const tracedNdy = {
