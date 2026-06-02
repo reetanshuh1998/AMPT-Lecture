@@ -1,6 +1,6 @@
 # Graduate Physics Animation Suite: Learning Guides
 
-This directory contains **6 interactive HTML5/JavaScript simulators** designed to validate the core physics concepts of Relativistic Heavy-Ion Kinematics and AMPT transport modeling, as detailed in **Chapter 5 of Sahoo's textbook**.
+This directory contains **7 interactive HTML5/JavaScript simulators** designed to validate the core physics concepts of Relativistic Heavy-Ion Kinematics and AMPT transport modeling, as detailed in **Chapter 5 of Sahoo's textbook**.
 
 ---
 
@@ -24,7 +24,17 @@ This directory contains **6 interactive HTML5/JavaScript simulators** designed t
 
 ---
 
-## 🌐 3. Lorentz Boost Demonstrator (dN/dy vs. dN/dη)
+## 🔬 3. Resolution vs. Energy Explorer
+* **File**: [03_debroglie_resolution_probing.html](03_debroglie_resolution_probing.html)
+* **Learning Objective**: Validate wave-particle duality $\lambda = h/p$, the optical Rayleigh microscopy limit, and target shell penetration depth as beam energy varies.
+* **Difficulty**: Intermediate
+* **Recommended Run Time**: 3–4 minutes
+* **Key Takeaway**: Dragging the energy slider dynamically reduces the de Broglie wavelength. This shrinks the diffraction Airy disk, satisfying the Rayleigh criterion to resolve two adjacent point targets (Microscopy view), and shrinks the green probe circle past the concentric nucleon surface ($1.0\text{ fm}$), valence quark ($0.15\text{ fm}$), gluon sea ($0.03\text{ fm}$), and saturation ($0.005\text{ fm}$) layers.
+* **Reference**: Sahoo Chapter 5.1; Beamer Slide 4.
+
+---
+
+## 🌐 4. Lorentz Boost Demonstrator (dN/dy vs. dN/dη)
 * **File**: [rapidity_boost.html](rapidity_boost.html)
 * **Learning Objective**: Contrast the Lorentz-invariance of rapidity $y$ with the shift and shape-change of pseudorapidity $\eta$ under boosts.
 * **Difficulty**: Intermediate
@@ -34,7 +44,7 @@ This directory contains **6 interactive HTML5/JavaScript simulators** designed t
 
 ---
 
-## 💥 4. Heavy-Ion Collision Stages
+## 💥 5. Heavy-Ion Collision Stages
 * **File**: [collision_animation.html](collision_animation.html)
 * **Learning Objective**: Chronologically trace the 5 dynamical epochs of a heavy-ion collision from initial Lorentz-contracted nuclei to final-state freeze-out.
 * **Difficulty**: Advanced
@@ -44,17 +54,17 @@ This directory contains **6 interactive HTML5/JavaScript simulators** designed t
 
 ---
 
-## 🧲 5. Time Projection Chamber (TPC) Event Display
+## 🧲 6. Time Projection Chamber (TPC) Event Display
 * **File**: [event_display.html](event_display.html)
 * **Learning Objective**: Visualize charged hadron tracking, momentum measurement from helical gas ionization curvature, and PID via Time-of-Flight or RICH.
 * **Difficulty**: Intermediate
 * **Recommended Run Time**: 3–4 minutes
-* **Key Takeaway**: Track curvature in magnetic fields relates to transverse momentum $p_T$ via $p_T = 0.3 \, B \, R$.Gas ionization loss $dE/dx$ separates particle species ($\pi, K, p$) at lower momentum.
+* **Key Takeaway**: Track curvature in magnetic fields relates to transverse momentum $p_T$ via $p_T = 0.3 \, B \, R$. Gas ionization loss $dE/dx$ separates particle species ($\pi, K, p$) at lower momentum.
 * **Reference**: Sahoo Chapter 5.4; Beamer Slides 8–11.
 
 ---
 
-## 📊 6. Transverse Spectra Builder
+## 📊 7. Transverse Spectra Builder
 * **File**: [pt_spectrum_builder.html](pt_spectrum_builder.html)
 * **Learning Objective**: Model thermal transverse momentum $p_T$ spectra and extract freeze-out temperatures using exponential fits.
 * **Difficulty**: Beginner

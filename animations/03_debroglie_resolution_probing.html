@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resolution vs. Energy Explorer</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0b0f19;
+            color: #f8fafc;
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            margin-top: 20px;
+        }
+        @media (min-width: 1000px) {
+            .container {
+                grid-template-columns: 0.8fr 1.2fr;
+            }
+        }
+        .panel {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+        }
+        .header-panel {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(6, 182, 212, 0.15) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            text-align: left;
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 12px;
+        }
+        .header-panel h1 {
+            font-size: 26px;
+            font-weight: 700;
+            background: linear-gradient(to right, #cbd5e1, #818cf8, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        .header-panel p {
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+        @media (min-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .full-width-card {
+                grid-column: span 2;
+            }
+        }
+        .visual-card {
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .visual-card h3 {
+            font-size: 15px;
+            color: #a5b4fc;
+            margin-bottom: 12px;
+            align-self: flex-start;
+            font-weight: 600;
+            border-left: 3px solid #6366f1;
+            padding-left: 8px;
+        }
+        canvas {
+            background: #090d16;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            max-width: 100%;
+            height: auto;
+        }
+        .control-group {
+            margin-bottom: 20px;
+        }
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #cbd5e1;
+        }
+        .control-label span.value {
+            font-family: 'JetBrains Mono', monospace;
+            color: #22d3ee;
+            font-weight: 700;
+            font-size: 16px;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #1e293b;
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #22d3ee;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+            transition: transform 0.1s, background-color 0.1s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+            background: #818cf8;
+        }
+        select {
+            width: 100%;
+            padding: 10px 14px;
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #f8fafc;
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        select:focus {
+            border-color: #22d3ee;
+        }
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 20px;
+            border-radius: 10px;
+            border: none;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+            transform: translateY(-1px);
+        }
+        .btn-pause {
+            background: #d97706;
+            color: white;
+            box-shadow: 0 4px 14px rgba(217, 119, 6, 0.4);
+        }
+        .btn-pause:hover:not(:disabled) {
+            background: #f59e0b;
+            transform: translateY(-1px);
+        }
+        .btn-pause:disabled {
+            background: #334155;
+            color: #64748b;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        .btn-reset {
+            background: #475569;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-reset:hover {
+            background: #64748b;
+            transform: translateY(-1px);
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+        }
+        .metric-card h4 {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+        }
+        .metric-card p {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            font-weight: 700;
+            color: #22d3ee;
+        }
+        .metric-card.classification {
+            grid-column: span 2;
+        }
+        .metric-card.classification p {
+            color: #10b981;
+            font-size: 14px;
+        }
+        .info-panel {
+            margin-top: 24px;
+            border-left: 4px solid #6366f1;
+            background: rgba(99, 102, 241, 0.05);
+            padding: 16px;
+            border-radius: 0 12px 12px 0;
+        }
+        .info-panel h3 {
+            font-size: 15px;
+            color: #a5b4fc;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .info-panel ul {
+            list-style-type: none;
+            font-size: 13px;
+            color: #cbd5e1;
+            line-height: 1.6;
+        }
+        .info-panel li {
+            margin-bottom: 8px;
+            position: relative;
+            padding-left: 18px;
+        }
+        .info-panel li::before {
+            content: "•";
+            color: #22d3ee;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            font-size: 18px;
+            top: -2px;
+        }
+        .code-highlight {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.06);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #22d3ee;
+        }
+        .status-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 16px 0 8px 0;
+            font-size: 13px;
+            color: #94a3b8;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #475569;
+            transition: all 0.3s ease;
+        }
+        .status-dot.active {
+            background-color: #10b981;
+            box-shadow: 0 0 10px #10b981;
+            animation: pulse 1.5s infinite;
+        }
+        .status-dot.paused {
+            background-color: #f59e0b;
+            box-shadow: 0 0 10px #f59e0b;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="panel">
+            <div class="header-panel">
+                <h1>🔬 Resolution vs. Energy Explorer</h1>
+                <p>Verify de Broglie resolution ($\lambda = h/p$). Observe how higher beam energies yield sub-femtometer wavelengths, satisfying the Rayleigh criterion to probe quarks and gluons inside nucleons.</p>
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <label for="energySlider">Beam Energy (E)</label>
+                    <span class="value" id="energyDisplay">1.0 GeV</span>
+                </div>
+                <input type="range" id="energySlider" min="-1" max="4" step="0.05" value="1.0"
+                       oninput="updateEnergySlider(this.value)">
+            </div>
+
+            <div class="control-group">
+                <label for="particleSelect" class="control-label" style="margin-bottom: 8px;">Probe Particle Species</label>
+                <select id="particleSelect" onchange="updateParticle(this.value)">
+                    <option value="proton" selected>Proton (p) — 0.938 GeV/c²</option>
+                    <option value="electron">Electron (e) — 0.000511 GeV/c²</option>
+                    <option value="gold">Gold Nucleon (Au) — 0.938 GeV/c²</option>
+                </select>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h4>Momentum (pc)</h4>
+                    <p id="metric-momentum">9.95 GeV</p>
+                </div>
+                <div class="metric-card">
+                    <h4>Wavelength (&lambda;)</h4>
+                    <p id="metric-wavelength">0.125 fm</p>
+                </div>
+                <div class="metric-card classification">
+                    <h4>Resolved Structure Scale</h4>
+                    <p id="metric-scale">Valence Quarks Resolved</p>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button id="btn-animate" class="btn-primary" onclick="toggleAnimation()"><span>▶</span> Play Energy Scan</button>
+                <button id="btn-pause" class="btn-pause" onclick="togglePause()" disabled><span>⏸</span> Pause</button>
+                <button class="btn-reset" onclick="resetExplorer()"><span>🔄</span> Reset</button>
+            </div>
+
+            <div class="status-container">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">SIMULATION IDLE</span>
+            </div>
+
+            <div class="info-panel">
+                <h3>Physical Principles (Slide 4):</h3>
+                <ul>
+                    <li><strong>Wave-Particle Duality</strong>: de Broglie's theorem asserts that a particle of momentum <code class="code-highlight">p</code> possesses an equivalent wavelength <code class="code-highlight">&lambda; = h/p = hc/(pc)</code>.</li>
+                    <li><strong>Probing Resolution Limit</strong>: To resolve a physical object of scale <code class="code-highlight">d</code>, the probing wavelength must satisfy <code class="code-highlight">&lambda; &le; d</code>.</li>
+                    <li><strong>Energy Demand</strong>: Higher spatial resolution requires shorter wavelengths, which demands increasingly energetic accelerators (SPS $\to$ RHIC $\to$ LHC).</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="visual-card">
+                <h3>📈 de Broglie Wave Dispersion (&lambda; vs. E)</h3>
+                <div id="dispersionPlot" style="width: 100%; height: 260px;"></div>
+            </div>
+
+            <div class="visual-card">
+                <h3>🔬 Microscopy Analogy (Rayleigh Criterion)</h3>
+                <canvas id="rayleighCanvas" width="400" height="260"></canvas>
+            </div>
+
+            <div class="visual-card full-width-card">
+                <h3>⚛ Concentric Sub-nuclear Structure Probing</h3>
+                <canvas id="nuclearCanvas" width="800" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const rayleighCanvas = document.getElementById('rayleighCanvas');
+        const rCtx = rayleighCanvas.getContext('2d');
+
+        const nuclearCanvas = document.getElementById('nuclearCanvas');
+        const nCtx = nuclearCanvas.getContext('2d');
+
+        // Physical constants
+        const hbar_c = 0.197327; // GeV·fm
+        const hc = 2 * Math.PI * hbar_c; // GeV·fm ~ 1.23984
+
+        const masses = {
+            proton: 0.938272,
+            electron: 0.000511,
+            gold: 0.938272
+        };
+
+        let currentParticle = 'proton';
+        let energyValue = 10.0; // GeV
+        let sliderVal = 1.0; // log10 value
+        let isAnimating = false;
+        let isPaused = false;
+        let animationInterval = null;
+
+        // Nuclear structure orbiting particle angle
+        let orbitAngle = 0;
+
+        function updateEnergySlider(val) {
+            sliderVal = parseFloat(val);
+            energyValue = Math.pow(10, sliderVal);
+            document.getElementById('energyDisplay').textContent = energyValue.toFixed(1) + ' GeV';
+            document.getElementById('energySlider').value = val;
+            updateSimulation();
+        }
+
+        function updateParticle(val) {
+            currentParticle = val;
+            updateSimulation();
+        }
+
+        function calculatePhysics(E) {
+            const m = masses[currentParticle];
+            if (E < m) E = m + 0.001; // physical limit
+            const pc = Math.sqrt(E*E - m*m);
+            const lambda = hc / pc; // fm
+            return { pc, lambda };
+        }
+
+        function getClassification(lambda) {
+            if (lambda > 1.2) return "Unresolved (Low Energy, Meso-Scale)";
+            if (lambda > 0.4) return "Nucleon Surface Resolved (~1.0 fm)";
+            if (lambda > 0.1) return "Valence Quarks Resolved (~0.15 fm)";
+            if (lambda > 0.02) return "Gluon Sea Resolved (~0.03 fm)";
+            return "QCD Gluon Saturation Probed (~0.005 fm)";
+        }
+
+        function drawRayleighMicroscopy(lambda) {
+            rCtx.clearRect(0, 0, rayleighCanvas.width, rayleighCanvas.height);
+            rCtx.fillStyle = '#090d16';
+            rCtx.fillRect(0, 0, rayleighCanvas.width, rayleighCanvas.height);
+
+            const cX = rayleighCanvas.width / 2;
+            const cY = 110;
+            const separation = 42; // constant px separation representing sub-atomic targets
+
+            // Airy disk screen radius scaled by wavelength
+            // Lambda is in fm. At E=10GeV, proton lambda is ~0.125fm. Let's map it:
+            const R_airy = Math.max(Math.min(lambda * 150, 100), 8);
+
+            const x1 = cX - separation;
+            const x2 = cX + separation;
+
+            // Draw target objects as glowing yellow dots
+            rCtx.fillStyle = '#eab308';
+            rCtx.beginPath();
+            rCtx.arc(x1, cY, 4, 0, 2*Math.PI);
+            rCtx.arc(x2, cY, 4, 0, 2*Math.PI);
+            rCtx.fill();
+
+            // Draw overlapping Airy diffraction halos
+            // Left Halo
+            let grad1 = rCtx.createRadialGradient(x1, cY, 0, x1, cY, R_airy);
+            grad1.addColorStop(0, 'rgba(56, 189, 248, 0.4)');
+            grad1.addColorStop(0.3, 'rgba(56, 189, 248, 0.18)');
+            grad1.addColorStop(1, 'rgba(56, 189, 248, 0)');
+            rCtx.fillStyle = grad1;
+            rCtx.beginPath();
+            rCtx.arc(x1, cY, R_airy, 0, 2*Math.PI);
+            rCtx.fill();
+
+            // Right Halo
+            let grad2 = rCtx.createRadialGradient(x2, cY, 0, x2, cY, R_airy);
+            grad2.addColorStop(0, 'rgba(56, 189, 248, 0.4)');
+            grad2.addColorStop(0.3, 'rgba(56, 189, 248, 0.18)');
+            grad2.addColorStop(1, 'rgba(56, 189, 248, 0)');
+            rCtx.fillStyle = grad2;
+            rCtx.beginPath();
+            rCtx.arc(x2, cY, R_airy, 0, 2*Math.PI);
+            rCtx.fill();
+
+            // Plot intensity diffraction wave profiles underneath
+            const baselineY = 220;
+            const scaleFactor = 65;
+
+            rCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            rCtx.lineWidth = 1;
+            rCtx.beginPath();
+            rCtx.moveTo(20, baselineY);
+            rCtx.lineTo(rayleighCanvas.width - 20, baselineY);
+            rCtx.stroke();
+
+            // Plot combined profile intensity
+            rCtx.strokeStyle = '#38bdf8';
+            rCtx.lineWidth = 2.5;
+            rCtx.beginPath();
+            let resolved = false;
+
+            // Rayleigh Criterion: dip in intensity in middle must be below 81%
+            let I_mid = 0;
+
+            for (let px = 20; px < rayleighCanvas.width - 20; px++) {
+                // Airy intensity approximation: I = exp(-r^2 / w^2)
+                let d1 = (px - x1) / (R_airy * 0.7);
+                let d2 = (px - x2) / (R_airy * 0.7);
+                let intensity1 = Math.exp(-d1*d1);
+                let intensity2 = Math.exp(-d2*d2);
+                let I_tot = intensity1 + intensity2;
+
+                if (px === cX) I_mid = I_tot;
+
+                let drawY = baselineY - (I_tot * scaleFactor * 0.8);
+                if (px === 20) rCtx.moveTo(px, drawY);
+                else rCtx.lineTo(px, drawY);
+            }
+            rCtx.stroke();
+
+            // Check resolved state
+            // If separation is large relative to R_airy, peak is resolved
+            // Rayleigh limit is when separation ~ 1.22 * lambda.
+            if (I_mid < 1.1) {
+                resolved = true;
+            }
+
+            // Labels
+            rCtx.fillStyle = '#cbd5e1';
+            rCtx.font = '11px JetBrains Mono, monospace';
+            rCtx.fillText(`Diffraction Limit Radius: ${R_airy.toFixed(1)}px`, 20, 20);
+
+            if (resolved) {
+                rCtx.fillStyle = '#10b981'; // Green
+                rCtx.font = 'bold 12px Outfit, sans-serif';
+                rCtx.fillText('STATUS: RESOLVED (Rayleigh Limit Met)', 20, 245);
+            } else {
+                rCtx.fillStyle = '#ef4444'; // Red
+                rCtx.font = 'bold 12px Outfit, sans-serif';
+                rCtx.fillText('STATUS: BLURRED / UNRESOLVED', 20, 245);
+            }
+        }
+
+        function drawNuclearStructure(lambda) {
+            nCtx.clearRect(0, 0, nuclearCanvas.width, nuclearCanvas.height);
+            nCtx.fillStyle = '#090d16';
+            nCtx.fillRect(0, 0, nuclearCanvas.width, nuclearCanvas.height);
+
+            const cX = nuclearCanvas.width / 2;
+            const cY = nuclearCanvas.height / 2;
+
+            // Concentric target shells on Canvas
+            const layers = [
+                { R: 130, threshold: 1.0, color: 'rgba(239, 68, 68, 0.1)', border: '#ef4444', name: 'Nucleon Surface', scale: '1.0 fm', tag: 'SPS scale' },
+                { R: 85, threshold: 0.20, color: 'rgba(249, 115, 22, 0.1)', border: '#f97316', name: 'Valence Quarks', scale: '0.15 fm', tag: 'RHIC scale' },
+                { R: 45, threshold: 0.05, color: 'rgba(34, 211, 238, 0.1)', border: '#22d3ee', name: 'Gluon Sea', scale: '0.03 fm', tag: 'LHC scale' },
+                { R: 18, threshold: 0.0125, color: 'rgba(217, 70, 239, 0.1)', border: '#d946ef', name: 'QCD Saturation', scale: '0.005 fm', tag: 'Future scale' }
+            ];
+
+            // Render rings
+            layers.forEach(layer => {
+                const resolved = lambda <= layer.threshold;
+
+                // Color path fill if resolved
+                if (resolved) {
+                    nCtx.fillStyle = layer.color;
+                    nCtx.beginPath();
+                    nCtx.arc(cX, cY, layer.R, 0, 2*Math.PI);
+                    nCtx.fill();
+                    nCtx.strokeStyle = layer.border;
+                    nCtx.lineWidth = 2;
+                } else {
+                    nCtx.strokeStyle = 'rgba(255,255,255,0.06)';
+                    nCtx.lineWidth = 1;
+                }
+
+                nCtx.beginPath();
+                nCtx.arc(cX, cY, layer.R, 0, 2*Math.PI);
+                nCtx.stroke();
+
+                // Layer labels aligned to left
+                nCtx.fillStyle = resolved ? layer.border : 'rgba(255, 255, 255, 0.2)';
+                nCtx.font = resolved ? 'bold 11px JetBrains Mono, monospace' : '10px JetBrains Mono, monospace';
+                nCtx.fillText(`${layer.name} (${layer.scale}) — ${layer.tag}`, 20, cY - layer.R + 4);
+            });
+
+            // Target core dot
+            nCtx.fillStyle = '#ffffff';
+            nCtx.beginPath();
+            nCtx.arc(cX, cY, 3, 0, 2*Math.PI);
+            nCtx.fill();
+
+            // Draw orbiting quarks / gluons inside resolved structures
+            orbitAngle += 0.03;
+            if (lambda <= 0.20) {
+                // Orbiting quarks
+                nCtx.fillStyle = '#f97316';
+                for (let i = 0; i < 3; i++) {
+                    let angle = orbitAngle + (i * 2 * Math.PI / 3);
+                    let qx = cX + Math.cos(angle) * 60;
+                    let qy = cY + Math.sin(angle) * 40;
+                    nCtx.beginPath();
+                    nCtx.arc(qx, qy, 5, 0, 2*Math.PI);
+                    nCtx.fill();
+                    nCtx.fillStyle = '#ffffff';
+                    nCtx.font = 'bold 9px sans-serif';
+                    nCtx.fillText('q', qx - 2, qy + 3);
+                    nCtx.fillStyle = '#f97316';
+                }
+            }
+
+            // Draw glowing de Broglie probe scanning ring
+            // Scale ring relative to lambda.
+            // Let lambda in fm map to canvas pixels:
+            const R_probe = Math.max(Math.min(lambda * 130, 220), 6);
+
+            nCtx.strokeStyle = '#10b981'; // Emerald Green
+            nCtx.lineWidth = 2.5;
+            nCtx.setLineDash([6, 6]);
+            nCtx.beginPath();
+            nCtx.arc(cX, cY, R_probe, 0, 2*Math.PI);
+            nCtx.stroke();
+            nCtx.setLineDash([]);
+
+            // Circular halo around probe ring
+            let probeGrad = nCtx.createRadialGradient(cX, cY, R_probe - 4, cX, cY, R_probe + 4);
+            probeGrad.addColorStop(0, 'rgba(16, 185, 129, 0)');
+            probeGrad.addColorStop(0.5, 'rgba(16, 185, 129, 0.15)');
+            probeGrad.addColorStop(1, 'rgba(16, 185, 129, 0)');
+            nCtx.fillStyle = probeGrad;
+            nCtx.beginPath();
+            nCtx.arc(cX, cY, R_probe + 5, 0, 2*Math.PI);
+            rCtx.arc(cX, cY, R_probe - 5, 0, 2*Math.PI, true); // subtract
+            nCtx.fill();
+
+            // Label for probe ring
+            nCtx.fillStyle = '#10b981';
+            nCtx.font = 'bold 12px Outfit, sans-serif';
+            nCtx.fillText(`Probe Wavelength (λ ≈ ${lambda.toFixed(4)} fm)`, cX + R_probe + 10, cY + 5);
+        }
+
+        function updatePlots() {
+            const { pc, lambda } = calculatePhysics(energyValue);
+
+            // Update dispersion Plotly.js chart
+            const energies = [];
+            const wavelengths = [];
+            const m = masses[currentParticle];
+
+            // Generate sweep from E = 0.1 to 10000 on log scale
+            for (let i = -1; i <= 4; i += 0.1) {
+                let E = Math.pow(10, i);
+                if (E > m) {
+                    let mom = Math.sqrt(E*E - m*m);
+                    let lam = hc / mom;
+                    energies.push(E);
+                    wavelengths.push(lam);
+                }
+            }
+
+            let trace1 = {
+                x: energies,
+                y: wavelengths,
+                mode: 'lines',
+                name: 'Wave Dispersion',
+                line: {color: '#818cf8', width: 3},
+                fill: 'tozeroy',
+                fillcolor: 'rgba(129, 140, 248, 0.15)'
+            };
+
+            let trace2 = {
+                x: [energyValue],
+                y: [lambda],
+                mode: 'markers',
+                name: 'Current Probe',
+                marker: {size: 11, color: '#10b981', symbol: 'diamond', line: {color: '#ffffff', width: 1.5}}
+            };
+
+            const dispersionLayout = {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                template: 'plotly_dark',
+                margin: { t: 15, b: 35, l: 45, r: 15 },
+                xaxis: { 
+                    type: 'log',
+                    title: { text: 'Beam Energy E (GeV)', font: { family: 'Outfit', size: 11 } },
+                    gridcolor: '#1e293b',
+                    linecolor: '#334155'
+                },
+                yaxis: { 
+                    type: 'log',
+                    title: { text: 'Wavelength λ (fm)', font: { family: 'Outfit', size: 11 } },
+                    gridcolor: '#1e293b',
+                    linecolor: '#334155'
+                },
+                showlegend: false,
+                hovermode: 'closest'
+            };
+
+            Plotly.newPlot('dispersionPlot', [trace1, trace2], dispersionLayout, {responsive: true, displayModeBar: false});
+        }
+
+        function updateSimulation() {
+            const { pc, lambda } = calculatePhysics(energyValue);
+
+            // Update readouts
+            document.getElementById('metric-momentum').textContent = pc.toFixed(2) + ' GeV/c';
+            document.getElementById('metric-wavelength').textContent = lambda.toFixed(4) + ' fm';
+            document.getElementById('metric-scale').textContent = getClassification(lambda);
+
+            updatePlots();
+            drawRayleighMicroscopy(lambda);
+            drawNuclearStructure(lambda);
+        }
+
+        function toggleAnimation() {
+            if (isAnimating) {
+                stopAnimation();
+            } else {
+                startAnimation();
+            }
+        }
+
+        function startAnimation() {
+            isAnimating = true;
+            isPaused = false;
+            updateStatus('running');
+            document.getElementById('btn-animate').innerHTML = `<span>⏹</span> Stop Scan`;
+            document.getElementById('btn-animate').style.background = "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
+            document.getElementById('btn-pause').disabled = false;
+            document.getElementById('btn-pause').innerHTML = `<span>⏸</span> Pause`;
+            document.getElementById('btn-pause').style.background = "#d97706";
+
+            if (sliderVal >= 4.0 || sliderVal <= -1.0) {
+                sliderVal = -1.0;
+            }
+
+            if (animationInterval) clearInterval(animationInterval);
+            animationInterval = setInterval(() => {
+                if (isPaused) return;
+
+                sliderVal += 0.04;
+                if (sliderVal >= 4.0) {
+                    sliderVal = 4.0;
+                    updateEnergySlider(sliderVal);
+                    stopAnimation();
+                    return;
+                }
+                updateEnergySlider(sliderVal);
+            }, 50);
+        }
+
+        function stopAnimation() {
+            isAnimating = false;
+            isPaused = false;
+            updateStatus('idle');
+            if (animationInterval) clearInterval(animationInterval);
+            document.getElementById('btn-animate').innerHTML = `<span>▶</span> Play Energy Scan`;
+            document.getElementById('btn-animate').style.background = "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)";
+            document.getElementById('btn-pause').disabled = true;
+            document.getElementById('btn-pause').innerHTML = `<span>⏸</span> Pause`;
+            document.getElementById('btn-pause').style.background = "#334155";
+        }
+
+        function togglePause() {
+            if (!isAnimating) return;
+            isPaused = !isPaused;
+            if (isPaused) {
+                updateStatus('paused');
+                document.getElementById('btn-pause').innerHTML = `<span>▶</span> Resume`;
+                document.getElementById('btn-pause').style.background = "#16a34a";
+            } else {
+                updateStatus('running');
+                document.getElementById('btn-pause').innerHTML = `<span>⏸</span> Pause`;
+                document.getElementById('btn-pause').style.background = "#d97706";
+            }
+        }
+
+        function updateStatus(state) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            dot.className = 'status-dot';
+            if (state === 'running') {
+                dot.classList.add('active');
+                text.textContent = 'SCAN RUNNING';
+            } else if (state === 'paused') {
+                dot.classList.add('paused');
+                text.textContent = 'SCAN PAUSED';
+            } else {
+                text.textContent = 'SCAN IDLE';
+            }
+        }
+
+        function resetExplorer() {
+            stopAnimation();
+            sliderVal = 1.0;
+            updateEnergySlider(1.0);
+        }
+
+        // Live quark orbiting animation ticks
+        setInterval(() => {
+            const { pc, lambda } = calculatePhysics(energyValue);
+            drawNuclearStructure(lambda);
+        }, 30);
+
+        // Initial render
+        updateEnergySlider(1.0);
+        updateStatus('idle');
+    </script>
+</body>
+</html>
