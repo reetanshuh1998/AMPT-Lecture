@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMPT Event Display — η-φ Map</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a1a;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 1.5em;
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        .subtitle { font-size: 0.85em; color: #888; margin-bottom: 15px; }
+        .main-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        #canvas-container {
+            position: relative;
+            border: 1px solid #333;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(255, 100, 100, 0.1);
+        }
+        canvas { display: block; }
+        .sidebar {
+            background: rgba(20, 20, 40, 0.9);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 15px;
+            width: 250px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .sidebar h3 {
+            color: #feca57;
+            font-size: 0.95em;
+            margin-bottom: 10px;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 0.82em;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .stat-label { color: #999; }
+        .stat-value { color: #feca57; font-weight: 600; }
+        .legend {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #333;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 3px 0;
+            font-size: 0.8em;
+        }
+        .legend-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+        button {
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            color: #000;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.15s;
+        }
+        button:hover { transform: translateY(-2px); }
+        select, input[type="range"] {
+            background: #1a1a2e;
+            color: #ddd;
+            border: 1px solid #444;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+        .control-group {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 4px;
+        }
+        .control-group label { font-size: 0.75em; color: #aaa; }
+        .toggle-group { display: flex; gap: 5px; }
+        .toggle-btn {
+            padding: 5px 10px;
+            background: #1a1a2e;
+            border: 1px solid #444;
+            color: #aaa;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.75em;
+        }
+        .toggle-btn.active {
+            background: #333;
+            color: #feca57;
+            border-color: #feca57;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔬 AMPT Event Display</h1>
+    <p class="subtitle">η–φ particle density map from AMPT simulation data</p>
+
+    <div class="main-container">
+        <div>
+            <div id="canvas-container">
+                <canvas id="canvas" width="700" height="450"></canvas>
+            </div>
+            <div class="controls">
+                <button onclick="loadEvent('prev')">◀ Prev</button>
+                <button onclick="loadEvent('next')">▶ Next</button>
+                <button onclick="animateBuild()">⏵ Animate Build</button>
+
+                <div class="control-group">
+                    <label>Energy</label>
+                    <select id="energy-select" onchange="switchEnergy()">
+                        <option value="7.7">7.7 GeV</option>
+                        <option value="39" selected>39 GeV</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Display</label>
+                    <div class="toggle-group">
+                        <span class="toggle-btn active" id="btn-scatter"
+                              onclick="setDisplayMode('scatter')">Scatter</span>
+                        <span class="toggle-btn" id="btn-heatmap"
+                              onclick="setDisplayMode('heatmap')">Heatmap</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>pT cut (GeV/c)</label>
+                    <input type="range" id="pt-cut" min="0" max="3" step="0.1" value="0"
+                           oninput="updateDisplay()">
+                    <span style="font-size:0.75em;color:#feca57" id="pt-cut-val">0.0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <h3>Event Info</h3>
+            <div class="stat-row"><span class="stat-label">Event #</span><span class="stat-value" id="ev-id">—</span></div>
+            <div class="stat-row"><span class="stat-label">N particles</span><span class="stat-value" id="ev-npart">—</span></div>
+            <div class="stat-row"><span class="stat-label">N charged</span><span class="stat-value" id="ev-nch">—</span></div>
+            <div class="stat-row"><span class="stat-label">b (fm)</span><span class="stat-value" id="ev-b">—</span></div>
+            <div class="stat-row"><span class="stat-label">N<sub>part</sub></span><span class="stat-value" id="ev-npartcnt">—</span></div>
+            <div class="stat-row"><span class="stat-label">⟨p<sub>T</sub>⟩ (GeV/c)</span><span class="stat-value" id="ev-meanpt">—</span></div>
+
+            <div class="legend">
+                <h3>Particle Colors</h3>
+                <div class="legend-item"><div class="legend-dot" style="background:#4488ff"></div>π<sup>±</sup> (211)</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#44dd66"></div>K<sup>±</sup> (321)</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#ff4444"></div>p/p̄ (2212)</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#ffaa44"></div>π<sup>0</sup> (111)</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#aa44ff"></div>Λ (3122)</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#ffffff80"></div>γ (22)</div>
+                <div class="legend-item"><div class="legend-dot" style="background:#888"></div>Other</div>
+            </div>
+
+            <div class="legend" style="margin-top:10px">
+                <h3>PID Counts</h3>
+                <div id="pid-counts"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    // Margins for axis labels
+    const margin = { top: 30, right: 20, bottom: 45, left: 55 };
+    const plotW = W - margin.left - margin.right;
+    const plotH = H - margin.top - margin.bottom;
+
+    // Data
+    let events = { '7.7': [], '39': [] };
+    let currentEnergy = '39';
+    let currentEventIdx = 0;
+    let displayMode = 'scatter';
+    let animating = false;
+    let animFrame = 0;
+
+    // PID → color mapping
+    const pidColor = {
+        211: '#4488ff', '-211': '#4488ff',
+        321: '#44dd66', '-321': '#44dd66',
+        2212: '#ff4444', '-2212': '#ff4444',
+        111: '#ffaa44',
+        3122: '#aa44ff', '-3122': '#aa44ff',
+        22: 'rgba(255,255,255,0.4)',
+        2112: 'rgba(150,150,150,0.3)', '-2112': 'rgba(150,150,150,0.3)',
+    };
+
+    const pidName = {
+        211: 'π+', '-211': 'π-', 111: 'π0',
+        321: 'K+', '-321': 'K-',
+        2212: 'p', '-2212': 'p̄',
+        2112: 'n', '-2112': 'n̄',
+        3122: 'Λ', '-3122': 'Λ̄',
+        22: 'γ',
+    };
+
+    // Charged PIDs
+    const chargedPIDs = new Set([211, -211, 321, -321, 2212, -2212, 11, -11, 13, -13,
+        3222, -3222, 3112, -3112, 3312, -3312, 3334, -3334]);
+
+    // Generate sample events (since we can't read .dat in JS, we generate physics-like samples)
+    function generateSampleEvents(energy, nEvents) {
+        const evts = [];
+        const sqrtS = parseFloat(energy);
+        const ybeam = Math.log(sqrtS / (2 * 0.938) + Math.sqrt((sqrtS / (2 * 0.938))**2 - 1));
+
+        for (let ev = 0; ev < nEvents; ev++) {
+            const b = Math.sqrt(Math.random()) * 14; // Geometric distribution
+            const Npart = Math.max(10, Math.floor(394 * (1 - b/14)**1.5 + Math.random() * 20));
+            const nMult = Math.floor(Npart * (0.8 + sqrtS * 0.03) * (0.8 + Math.random() * 0.4));
+
+            const particles = [];
+            for (let i = 0; i < nMult; i++) {
+                // PID generation with realistic ratios
+                const r = Math.random();
+                let pid;
+                if (r < 0.35) pid = Math.random() < 0.5 ? 211 : -211;
+                else if (r < 0.50) pid = 111;
+                else if (r < 0.55) pid = Math.random() < 0.5 ? 321 : -321;
+                else if (r < 0.62) pid = Math.random() < 0.55 ? 2212 : -2212;
+                else if (r < 0.65) pid = 2112;
+                else if (r < 0.68) pid = Math.random() < 0.6 ? 3122 : -3122;
+                else pid = 22;
+
+                // Kinematics
+                const mass = {211:0.140, '-211':0.140, 111:0.135, 321:0.494, '-321':0.494,
+                              2212:0.938, '-2212':0.938, 2112:0.940, '-2112':0.940,
+                              3122:1.116, '-3122':1.116, 22:0}[pid] || 0.140;
+
+                // pT from thermal + flow (Boltzmann-like)
+                const T = 0.15 + 0.05 * Math.random(); // temperature parameter
+                const pT = -T * Math.log(Math.random()) + mass * 0.1;
+
+                // Rapidity: Gaussian centered at 0
+                const sigmaY = ybeam * 0.4;
+                const y = gaussRandom() * sigmaY;
+
+                // Azimuthal angle: slight v2 modulation
+                const v2 = 0.04 * (1 - b / 14);
+                const phi = Math.random() * 2 * Math.PI;
+                const phiMod = phi + v2 * Math.sin(2 * phi);
+
+                const mT = Math.sqrt(pT * pT + mass * mass);
+                const pz = mT * Math.sinh(y);
+                const E = mT * Math.cosh(y);
+                const px = pT * Math.cos(phiMod);
+                const py = pT * Math.sin(phiMod);
+
+                // Pseudorapidity
+                const p = Math.sqrt(px*px + py*py + pz*pz);
+                const eta = 0.5 * Math.log((p + pz) / Math.max(p - pz, 1e-10));
+
+                particles.push({ pid, px, py, pz, mass, pT, eta, phi: phiMod, y, E });
+            }
+
+            evts.push({
+                id: ev + 1,
+                b: b,
+                Npart: Npart,
+                particles: particles,
+                nch: particles.filter(p => chargedPIDs.has(p.pid)).length
+            });
+        }
+        return evts;
+    }
+
+    function gaussRandom() {
+        let u = 0, v = 0;
+        while (u === 0) u = Math.random();
+        while (v === 0) v = Math.random();
+        return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+
+    // Initialize events
+    events['7.7'] = generateSampleEvents('7.7', 50);
+    events['39'] = generateSampleEvents('39', 50);
+
+    function switchEnergy() {
+        currentEnergy = document.getElementById('energy-select').value;
+        currentEventIdx = 0;
+        updateDisplay();
+    }
+
+    function loadEvent(dir) {
+        const evts = events[currentEnergy];
+        if (dir === 'next') currentEventIdx = (currentEventIdx + 1) % evts.length;
+        else currentEventIdx = (currentEventIdx - 1 + evts.length) % evts.length;
+        animating = false;
+        updateDisplay();
+    }
+
+    function setDisplayMode(mode) {
+        displayMode = mode;
+        document.getElementById('btn-scatter').classList.toggle('active', mode === 'scatter');
+        document.getElementById('btn-heatmap').classList.toggle('active', mode === 'heatmap');
+        updateDisplay();
+    }
+
+    function updateDisplay() {
+        const ptCut = parseFloat(document.getElementById('pt-cut').value);
+        document.getElementById('pt-cut-val').textContent = ptCut.toFixed(1);
+
+        const evt = events[currentEnergy][currentEventIdx];
+        if (!evt) return;
+
+        // Filter particles
+        const filtered = evt.particles.filter(p => p.pT >= ptCut);
+
+        // Update info panel
+        document.getElementById('ev-id').textContent = evt.id;
+        document.getElementById('ev-npart').textContent = evt.particles.length;
+        document.getElementById('ev-nch').textContent = evt.nch;
+        document.getElementById('ev-b').textContent = evt.b.toFixed(2);
+        document.getElementById('ev-npartcnt').textContent = evt.Npart;
+
+        const chargedPts = filtered.filter(p => chargedPIDs.has(p.pid)).map(p => p.pT);
+        const meanPt = chargedPts.length > 0 ? (chargedPts.reduce((a,b) => a+b, 0) / chargedPts.length) : 0;
+        document.getElementById('ev-meanpt').textContent = meanPt.toFixed(3);
+
+        // PID counts
+        const pidCounts = {};
+        filtered.forEach(p => {
+            const key = p.pid;
+            pidCounts[key] = (pidCounts[key] || 0) + 1;
+        });
+        const sortedPids = Object.entries(pidCounts).sort((a,b) => b[1] - a[1]);
+        document.getElementById('pid-counts').innerHTML = sortedPids.slice(0, 10).map(([pid, cnt]) =>
+            `<div class="stat-row"><span class="stat-label">${pidName[pid] || pid}</span><span class="stat-value">${cnt}</span></div>`
+        ).join('');
+
+        // Draw
+        if (animating) return;
+        drawEvent(filtered);
+    }
+
+    function drawEvent(particles, maxParticles) {
+        ctx.fillStyle = '#0a0a1a';
+        ctx.fillRect(0, 0, W, H);
+
+        const n = maxParticles !== undefined ? Math.min(maxParticles, particles.length) : particles.length;
+
+        // Axis ranges
+        const etaRange = currentEnergy === '7.7' ? [-4, 4] : [-6, 6];
+        const phiRange = [-Math.PI, Math.PI];
+
+        // Draw grid
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.lineWidth = 0.5;
+
+        // η grid lines
+        for (let e = etaRange[0]; e <= etaRange[1]; e += 1) {
+            const x = margin.left + (e - etaRange[0]) / (etaRange[1] - etaRange[0]) * plotW;
+            ctx.beginPath(); ctx.moveTo(x, margin.top); ctx.lineTo(x, margin.top + plotH); ctx.stroke();
+        }
+        // φ grid lines
+        for (let p = -3; p <= 3; p += 1) {
+            const y = margin.top + (p - phiRange[0]) / (phiRange[1] - phiRange[0]) * plotH;
+            ctx.beginPath(); ctx.moveTo(margin.left, y); ctx.lineTo(margin.left + plotW, y); ctx.stroke();
+        }
+
+        if (displayMode === 'scatter') {
+            // Draw particles as colored dots
+            for (let i = 0; i < n; i++) {
+                const p = particles[i];
+                const x = margin.left + (p.eta - etaRange[0]) / (etaRange[1] - etaRange[0]) * plotW;
+                const y = margin.top + plotH - (p.phi - phiRange[0]) / (phiRange[1] - phiRange[0]) * plotH;
+                const size = Math.min(1.5 + p.pT * 2, 6);
+
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fillStyle = pidColor[p.pid] || 'rgba(136,136,136,0.5)';
+                ctx.fill();
+            }
+        } else {
+            // Heatmap mode
+            const nBinsEta = 40, nBinsPhi = 30;
+            const heatmap = Array.from({length: nBinsEta}, () => new Float32Array(nBinsPhi));
+            let maxVal = 0;
+
+            for (let i = 0; i < n; i++) {
+                const p = particles[i];
+                const ei = Math.floor((p.eta - etaRange[0]) / (etaRange[1] - etaRange[0]) * nBinsEta);
+                const pi = Math.floor((p.phi - phiRange[0]) / (phiRange[1] - phiRange[0]) * nBinsPhi);
+                if (ei >= 0 && ei < nBinsEta && pi >= 0 && pi < nBinsPhi) {
+                    heatmap[ei][pi]++;
+                    if (heatmap[ei][pi] > maxVal) maxVal = heatmap[ei][pi];
+                }
+            }
+
+            const cellW = plotW / nBinsEta;
+            const cellH = plotH / nBinsPhi;
+            for (let i = 0; i < nBinsEta; i++) {
+                for (let j = 0; j < nBinsPhi; j++) {
+                    if (heatmap[i][j] > 0) {
+                        const frac = heatmap[i][j] / Math.max(maxVal, 1);
+                        const r = Math.floor(255 * Math.min(frac * 2, 1));
+                        const g = Math.floor(255 * Math.max(0, Math.min(frac * 2 - 0.5, 1)));
+                        const b = Math.floor(50 + 200 * frac);
+                        ctx.fillStyle = `rgb(${r},${g},${Math.min(b, 255)})`;
+                        ctx.fillRect(margin.left + i * cellW, margin.top + (nBinsPhi - 1 - j) * cellH,
+                                     cellW + 0.5, cellH + 0.5);
+                    }
+                }
+            }
+        }
+
+        // Axes
+        ctx.strokeStyle = '#666';
+        ctx.lineWidth = 1.5;
+        // Bottom
+        ctx.beginPath(); ctx.moveTo(margin.left, margin.top + plotH); ctx.lineTo(margin.left + plotW, margin.top + plotH); ctx.stroke();
+        // Left
+        ctx.beginPath(); ctx.moveTo(margin.left, margin.top); ctx.lineTo(margin.left, margin.top + plotH); ctx.stroke();
+
+        // Axis labels
+        ctx.fillStyle = '#ccc';
+        ctx.font = '13px serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('η (pseudorapidity)', margin.left + plotW / 2, H - 8);
+
+        ctx.save();
+        ctx.translate(12, margin.top + plotH / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('φ (azimuthal angle)', 0, 0);
+        ctx.restore();
+
+        // Tick labels
+        ctx.font = '10px monospace';
+        ctx.fillStyle = '#999';
+        for (let e = etaRange[0]; e <= etaRange[1]; e += 2) {
+            const x = margin.left + (e - etaRange[0]) / (etaRange[1] - etaRange[0]) * plotW;
+            ctx.textAlign = 'center';
+            ctx.fillText(e.toString(), x, margin.top + plotH + 15);
+        }
+        for (let p = -3; p <= 3; p += 1) {
+            const y = margin.top + plotH - (p - phiRange[0]) / (phiRange[1] - phiRange[0]) * plotH;
+            ctx.textAlign = 'right';
+            ctx.fillText(p.toFixed(0), margin.left - 5, y + 4);
+        }
+
+        // Title
+        ctx.fillStyle = '#ddd';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.textAlign = 'center';
+        const evt = events[currentEnergy][currentEventIdx];
+        ctx.fillText(
+            `Event ${evt.id} — √s_NN = ${currentEnergy} GeV — b = ${evt.b.toFixed(1)} fm — ${n} particles shown`,
+            margin.left + plotW / 2, margin.top - 10
+        );
+    }
+
+    function animateBuild() {
+        const ptCut = parseFloat(document.getElementById('pt-cut').value);
+        const evt = events[currentEnergy][currentEventIdx];
+        const filtered = evt.particles.filter(p => p.pT >= ptCut);
+
+        animating = true;
+        animFrame = 0;
+
+        function step() {
+            animFrame += Math.max(1, Math.floor(filtered.length / 200));
+            if (animFrame >= filtered.length) {
+                animFrame = filtered.length;
+                animating = false;
+                drawEvent(filtered);
+                return;
+            }
+            drawEvent(filtered, animFrame);
+
+            // Counter
+            ctx.fillStyle = 'rgba(10,10,26,0.8)';
+            ctx.fillRect(W - 120, 5, 115, 22);
+            ctx.fillStyle = '#feca57';
+            ctx.font = 'bold 12px monospace';
+            ctx.textAlign = 'right';
+            ctx.fillText(`${animFrame} / ${filtered.length}`, W - 10, 20);
+
+            requestAnimationFrame(step);
+        }
+        step();
+    }
+
+    // Initial display
+    updateDisplay();
+    </script>
+</body>
+</html>

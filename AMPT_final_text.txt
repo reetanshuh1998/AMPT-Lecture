@@ -1,0 +1,248 @@
+A Multi-Phase Transport (AMPT) Model
+
+  XI SERC School on Experimental High-Energy Physics
+               NISER Bhubaneswar
+              November 07 - 27, 2017
+
+             Event Generators Session
+
+
+
+
+                                                   1
+                                  Introduction
+ü A Multi-Phase Transport (AMPT) is a Monte Carlo transport model for heavy ion
+  collisions at relativistic energies.
+ü Includes both initial partonic and final hadronic interactions, and the transition
+  between these two phases of matter.
+ü Aims to provide a kinetic description of all essential stages of heavy ion collisions:
+
+               A+B                  Initial Conditions
+
+
+ Collision Systems:               Parton Interactions
+ p+A, A+A
+
+ Collision Energies:
+                                    Hadronization
+ √sNN = 5 - 5500 GeV
+
+
+                                    Hadron Cascade
+
+
+                                Final Particle Spectra
+
+ü Two versions of AMPT model are available: Default and String Melting
+                                                                                           2
+        Structure of AMPT v1.xx (Default version)
+                                              HIJING
+    A+B              Minijet Partons   Excited Strings      Spectator Nucleons
+
+Generate parton space-time
+
+                     ZPC (Parton Cascade)
+
+      Partons freeze-out
+
+                    Hadronization (Lund String Fragmentation)
+
+
+
+                    Extended ART (Hadron Cascade)
+
+      Hadrons freeze-out
+
+                     Final Particle Spectra
+                                                         B. Zhang et al. PRC 61, 067901 (2000)
+                                                         Z.W. Lin et al. PRC 61, 067901 (2001)
+
+
+                                                                                            3
+    Structure of AMPT v2.xx (String Mel=ng version)
+                                              HIJING
+    A+B              Minijet Partons   Excited Strings    Spectator Nucleons
+
+Generate parton space-time
+
+                     ZPC (Parton Cascade)
+
+      Partons freeze-out
+
+                    Hadronization (Quark Coalescence)
+
+
+
+                    Extended ART (Hadron Cascade)
+
+      Hadrons freeze-out
+
+                     Final Particle Spectra
+                                                         Z.W. Lin et al., PRC 65, 034904 (2002)
+                                                         Z.W. Lin et al., PRL 89, 152301 (2002)
+
+
+                                                                                           4
+               Individual Components of AMPT
+HIJING         Two component model (soft strings + hard minijets)
+
+ZPC            Zhang’s Parton Cascade (elastic collisions only)
+
+Hadronization Lund string fragmentation (Default AMPT)
+                        or
+              Quark coalescence (String Melting AMPT)
+
+Extended ART Hadron cascade,
+             including secondary interactions for
+                π, ρ, ω, η, Κ, Κ*, φ
+                n, p, Δ, Ν*(1440), Ν*(1535), Λ, Ω, Ξ, Σ, d
+
+All other particles with PYTHIA flavor codes have no secondary interactions
+e.g. D, Ds, J /ψ, B, ϒ
+
+
+
+                                                                              5
+                                   Installation
+                     A Multi-Phase Transport (AMPT) Model
+       Authors: Che-Ming Ko, Bao-An Li, Zi-Wei Lin, Subrata Pal, and Bin Zhang
+
+"Official" versions v1.11/v2.11 (2004) and v1.21/v2.21 (2008) are available at:
+http://myweb.ecu.edu/linz/ampt/
+https://karman.physics.purdue.edu/OSCAR
+
+More versions, including later test (t) versions, are available at:
+http://myweb.ecu.edu/linz/ampt/
+
+Detailed physics descriptions:
+Z.W. Lin et al., PRC 72, 064901 (2005)
+
+Ø Download zip file of the source code (e.g. ampt-v1.26t7-v2.26t7.zip) from the above
+  link
+Ø Unzip the source code in your working directory
+Ø Package of each AMPT version contains:
+  the source codes, an example input file, a Makefile, a readme, a required subdirectory
+  for storing output files, and a script to run the code
+
+                                                                                   6
+                                 Installation
+Fortran Source Routines:
+ amptsub.f
+ art1f.f
+ hijing1.383_ampt.f
+ hipyset1.35.f
+ linana.f
+ main.f
+ zpc.f
+
+readme       Users’ Guide (including summary of changes)
+Makefile     To compile the code
+exec          To execute the code
+input.ampt    Input parameter settings
+ana/         Directory for output data and diagnostics files
+
+
+Ø set the initial parameters in `input.ampt’
+Ø Type ‘make’ to compile
+Ø Type ‘sh exec &’ or ‘./exec’ to execute
+
+                                                               7
+                     Input File: input.ampt
+                         200        ! EFRM (sqrt(S_NN) in GeV if FRAME is CMS)
+                         CMS          ! FRAME
+Collision parameters /   A         ! PROJ
+                         A         ! TARG
+HIJING / Fragmentation   197        ! IAP (projectile A number)
+                         79         ! IZP (projectile Z number)
+                         197        ! IAT (target A number)
+                         79         ! IZT (target Z number)
+                         1          ! NEVNT (total number of events)
+                         0.         ! BMIN (mininum impact parameter in fm)
+                         3.             ! BMAX (maximum impact parameter in fm, also see below)
+                         4              ! ISOFT (D=1): select Default AMPT or String Melting(see below)
+                         150            ! NTMAX: number of timesteps (D=150), see below
+ Hadron Cascade          0.2            ! DT: timestep in fm (hadron cascade time= DT*NTMAX) (D=0.2)
+                         0.55           ! PARJ(41): parameter a in Lund symmetric splitting function
+                         0.15           ! PARJ(42): parameter b in Lund symmetric splitting function
+                         …..
+                         1           ! shadowing flag (Default=1,yes; 0,no)
+                         0           ! quenching flag (D=0,no; 1,yes)
+                         2.0         ! quenching parameter -dE/dx (GeV/fm) in case quenching flag=1
+                         2.265d0     ! parton screening mass in fm^(-1) (D=2.265d0), see below
+ Parton Cascade          0           ! IZPC: (D=0 forward-angle parton scatterings; 100,isotropic)
+                         0.33d0      ! alpha in parton cascade (D=0.33d0), see parton screening mass
+
+ Coalescence radii       1d6         ! dpcoal in GeV
+                         1d6         ! drcoal in fm
+                         …...
+ Shadowing Option        0           ! Flag to enable users to modify shadowing (D=0,no; 1,yes)
+                         1.d0        ! Factor used to modify nuclear shadowing
+ Reaction Plane          0           ! Flag for random orientation of reaction plane (D=0,no; 1,yes)
+
+                                                                                                       8
+                           Input File: input.ampt
+EFRM : √sNN in GeV per nucleon if FRAME is CMS
+       projectile energy per nucleon if FRAME is LAB
+ISOFT : choice of parton-hadron conversion scenario
+        =1: default AMPT model (version 1.x)
+        =4: the AMPT model with string melting (version 2.y)
+NTMAX : the number of time-steps for hadron cascade, D=150
+DT    : value of the time-step (in fm/c) for hadron cascade, D=0.2
+        Termination time of hadron cascade (t_cut) = NTMAX*DT
+parton screening mass : Its square is inversely proportional to the parton cross section
+          D=2.265d0 for 3mb cross section when alpha in parton cascade is set to 0.33
+          D=3.2264d0 for 3mb cross section when alpha in parton cascade is set to 0.47
+          D=2.2814d0 for 6mb
+          D=1d4 effectively turns off parton cascade.
+dpcoal : parton coalescence distance in momentum space (in GeV/c), D=1d6
+drcoal : parton coalescence distance in coordinate space (in fm), D=1d6
+ishadow : set to 1 to enable users to adjust nuclear shadowing
+dshadow : valid when ishadow=1; this parameter modifies the HIJING shadowing
+           D = 0.d0 turns off shadowing
+           D = 1.d0 uses the default HIJING shadowing
+iphirp : set to 1 to turn on random orientation of reaction plane (D=0)
+
+                                                                                           9
+                       Output File: ampt.dat
+ana/ampt.dat: Contains particle records at hadron kinetic freeze-out
+
+
+           No. of particles         Npart1_el         Npart1_inel
+      Test#         b (fm)                                 Npart2_el Npart2_inel
+Event#                     Npart1 Npart2
+
+
+     1    1 7439 1.9717     181 189           2 179 2 187      0.0000
+  2112   0.000 0.000 99.9956 0.940             3.34 -6.74 0.20 0.20
+  2212   0.000 0.000 99.9956 0.940             7.32 -0.86 0.20 0.20
+  2112   0.000 0.000 -99.9956 0.940           -5.55 -4.66 -0.20 0.20
+  2112   0.000 0.000 99.9956 0.940             6.50 0.27 0.20 0.20
+  2112   0.000 0.000 99.9956 0.940             4.39 -3.13 0.20 0.20
+
+
+Particle ID    Final momentum         Mass         Final position      Time
+(PYTHIA)
+
+                                                   Units: E, p, m in GeV; x, t in fm
+
+                                                                                       10
+                                     Exercises
+Ø Make necessary changes in input.ampt file
+
+Ø Generate about 50 events for Au+Au collisions at √sNN = 200 GeV with impact
+  parameter 0 to 5 fm.
+
+Ø Read the output file and draw following distributions:
+   px, py, pz, pT, η, φ, and multiplicity of charged particles.
+
+
+
+
+                                                                                11
+Back-up
+
+
+
+
+          12
+

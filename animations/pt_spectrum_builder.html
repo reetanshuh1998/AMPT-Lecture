@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pT Spectrum Builder — AMPT Lecture</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a1a;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 1.5em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        .subtitle { font-size: 0.85em; color: #888; margin-bottom: 15px; max-width: 700px; text-align: center; }
+        .main-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        #canvas-container {
+            border: 1px solid #333;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.12);
+        }
+        canvas { display: block; }
+        .sidebar {
+            background: rgba(20, 20, 40, 0.9);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 15px;
+            width: 240px;
+        }
+        .sidebar h3 { color: #667eea; font-size: 0.9em; margin-bottom: 10px; }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+            font-size: 0.8em;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .stat-label { color: #999; }
+        .stat-value { color: #667eea; font-weight: 600; }
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        button:hover { transform: translateY(-2px); }
+        .control-group {
+            display: flex; flex-direction: column;
+            align-items: center; gap: 4px;
+        }
+        .control-group label { font-size: 0.75em; color: #aaa; }
+        select { background: #1a1a2e; color: #ddd; border: 1px solid #444; padding: 6px 10px; border-radius: 6px; }
+        input[type="range"] { width: 130px; accent-color: #667eea; }
+        .fit-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(30, 30, 50, 0.8);
+            border-radius: 8px;
+            border: 1px solid #444;
+            font-size: 0.78em;
+            line-height: 1.6;
+        }
+        .fit-info .formula { color: #a8e063; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>📊 pT Spectrum Builder</h1>
+    <p class="subtitle">
+        Watch how a transverse momentum spectrum emerges particle-by-particle from AMPT data.
+        Compare fit functions: Exponential, Boltzmann, Tsallis-Blast-Wave.
+    </p>
+
+    <div class="main-container">
+        <div>
+            <div id="canvas-container">
+                <canvas id="canvas" width="700" height="480"></canvas>
+            </div>
+            <div class="controls">
+                <button onclick="startFilling()">⏵ Fill Histogram</button>
+                <button onclick="resetHist()">↺ Reset</button>
+                <button onclick="fillInstantly()">⏩ Fill All</button>
+
+                <div class="control-group">
+                    <label>Speed</label>
+                    <input type="range" id="speed" min="1" max="100" value="20"
+                           oninput="document.getElementById('speed-val').textContent = this.value">
+                    <span style="font-size:0.75em;color:#667eea" id="speed-val">20</span>
+                </div>
+
+                <div class="control-group">
+                    <label>Particle</label>
+                    <select id="particle-select" onchange="switchParticle()">
+                        <option value="all">All charged</option>
+                        <option value="pion">π± (m = 140 MeV)</option>
+                        <option value="kaon">K± (m = 494 MeV)</option>
+                        <option value="proton">p/p̄ (m = 938 MeV)</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Fit</label>
+                    <select id="fit-select" onchange="redraw()">
+                        <option value="none">No Fit</option>
+                        <option value="exponential">Exponential</option>
+                        <option value="boltzmann">Boltzmann</option>
+                        <option value="tsallis">Tsallis</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <h3>Statistics</h3>
+            <div class="stat-row"><span class="stat-label">Particles filled</span><span class="stat-value" id="n-filled">0</span></div>
+            <div class="stat-row"><span class="stat-label">Total generated</span><span class="stat-value" id="n-total">0</span></div>
+            <div class="stat-row"><span class="stat-label">⟨pT⟩ (GeV/c)</span><span class="stat-value" id="mean-pt">—</span></div>
+            <div class="stat-row"><span class="stat-label">σ(pT) (GeV/c)</span><span class="stat-value" id="std-pt">—</span></div>
+            <div class="stat-row"><span class="stat-label">Max pT</span><span class="stat-value" id="max-pt">—</span></div>
+
+            <div class="fit-info">
+                <h3 style="color:#a8e063;font-size:0.85em;margin-bottom:5px;">Fit Functions (Book §5.2.7)</h3>
+                <p><strong>Exponential:</strong></p>
+                <p class="formula">dN/dpT ∝ exp(-pT / T)</p>
+                <p style="margin-top:5px;"><strong>Boltzmann:</strong></p>
+                <p class="formula">dN/dpT ∝ pT · mT · exp(-mT / T)</p>
+                <p style="margin-top:5px;"><strong>Tsallis:</strong></p>
+                <p class="formula">dN/dpT ∝ pT · [1 + (mT-m)/(nT)]^(-n)</p>
+
+                <div style="margin-top:8px;border-top:1px solid #444;padding-top:8px;">
+                    <div class="stat-row"><span class="stat-label">T (slope)</span><span class="stat-value" id="fit-T">—</span></div>
+                    <div class="stat-row"><span class="stat-label">χ²/ndf</span><span class="stat-value" id="fit-chi2">—</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    const margin = { top: 35, right: 20, bottom: 50, left: 65 };
+    const plotW = W - margin.left - margin.right;
+    const plotH = H - margin.top - margin.bottom;
+
+    // Histogram
+    const nBins = 40;
+    const ptMin = 0, ptMax = 4.0;
+    const binWidth = (ptMax - ptMin) / nBins;
+    let histogram = new Float32Array(nBins);
+    let particlePool = [];
+    let fillIdx = 0;
+    let animating = false;
+    let animId = null;
+
+    // Particle masses
+    const masses = { all: 0.140, pion: 0.140, kaon: 0.494, proton: 0.938 };
+
+    function generateParticles(type, n) {
+        const mass = masses[type] || 0.140;
+        const particles = [];
+        const T_eff = 0.20 + mass * 0.1; // effective temperature increases with mass
+
+        for (let i = 0; i < n; i++) {
+            // Thermal pT: Boltzmann-like sampling using rejection
+            // f(pT) ∝ pT * mT * exp(-mT/T)
+            let pT;
+            const maxPt = 4.0;
+            for (let attempt = 0; attempt < 100; attempt++) {
+                pT = Math.random() * maxPt;
+                const mT = Math.sqrt(pT * pT + mass * mass);
+                const prob = pT * mT * Math.exp(-mT / T_eff);
+                const maxProb = T_eff * T_eff * 2; // approximate max
+                if (Math.random() * maxProb < prob) break;
+            }
+            particles.push(pT);
+        }
+        return particles;
+    }
+
+    function switchParticle() {
+        resetHist();
+    }
+
+    function resetHist() {
+        if (animId) cancelAnimationFrame(animId);
+        animating = false;
+        histogram = new Float32Array(nBins);
+        fillIdx = 0;
+        const type = document.getElementById('particle-select').value;
+        particlePool = generateParticles(type, 10000);
+        updateStats();
+        redraw();
+    }
+
+    function fillInstantly() {
+        if (animId) cancelAnimationFrame(animId);
+        animating = false;
+        histogram = new Float32Array(nBins);
+
+        particlePool.forEach(pT => {
+            const bin = Math.floor((pT - ptMin) / binWidth);
+            if (bin >= 0 && bin < nBins) histogram[bin]++;
+        });
+        fillIdx = particlePool.length;
+        updateStats();
+        redraw();
+    }
+
+    function startFilling() {
+        if (animating) return;
+        if (fillIdx >= particlePool.length) {
+            resetHist();
+        }
+        animating = true;
+        animateStep();
+    }
+
+    function animateStep() {
+        const speed = parseInt(document.getElementById('speed').value);
+        const batchSize = Math.max(1, speed);
+
+        for (let i = 0; i < batchSize && fillIdx < particlePool.length; i++) {
+            const pT = particlePool[fillIdx];
+            const bin = Math.floor((pT - ptMin) / binWidth);
+            if (bin >= 0 && bin < nBins) histogram[bin]++;
+            fillIdx++;
+        }
+
+        updateStats();
+        redraw();
+
+        if (fillIdx < particlePool.length && animating) {
+            animId = requestAnimationFrame(animateStep);
+        } else {
+            animating = false;
+        }
+    }
+
+    function updateStats() {
+        document.getElementById('n-filled').textContent = fillIdx;
+        document.getElementById('n-total').textContent = particlePool.length;
+
+        if (fillIdx > 0) {
+            const filled = particlePool.slice(0, fillIdx);
+            const mean = filled.reduce((a, b) => a + b, 0) / filled.length;
+            const std = Math.sqrt(filled.reduce((a, b) => a + (b - mean) ** 2, 0) / filled.length);
+            const max = Math.max(...filled);
+            document.getElementById('mean-pt').textContent = mean.toFixed(3);
+            document.getElementById('std-pt').textContent = std.toFixed(3);
+            document.getElementById('max-pt').textContent = max.toFixed(3);
+        }
+    }
+
+    function redraw() {
+        ctx.fillStyle = '#0a0a1a';
+        ctx.fillRect(0, 0, W, H);
+
+        const maxCount = Math.max(...histogram, 1);
+        const useLog = maxCount > 50;
+
+        // Grid
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i <= nBins; i += 5) {
+            const x = margin.left + (i / nBins) * plotW;
+            ctx.beginPath(); ctx.moveTo(x, margin.top); ctx.lineTo(x, margin.top + plotH); ctx.stroke();
+        }
+
+        // Draw histogram bars
+        for (let i = 0; i < nBins; i++) {
+            if (histogram[i] <= 0) continue;
+
+            let barH;
+            if (useLog) {
+                barH = histogram[i] > 0 ?
+                    (Math.log10(histogram[i]) / Math.log10(maxCount)) * plotH : 0;
+            } else {
+                barH = (histogram[i] / maxCount) * plotH;
+            }
+
+            const x = margin.left + (i / nBins) * plotW;
+            const barW = plotW / nBins;
+
+            // Gradient fill
+            const grad = ctx.createLinearGradient(x, margin.top + plotH - barH, x, margin.top + plotH);
+            grad.addColorStop(0, 'rgba(102, 126, 234, 0.9)');
+            grad.addColorStop(1, 'rgba(118, 75, 162, 0.9)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(x + 1, margin.top + plotH - barH, barW - 2, barH);
+
+            // Edge
+            ctx.strokeStyle = 'rgba(102, 126, 234, 0.5)';
+            ctx.lineWidth = 0.5;
+            ctx.strokeRect(x + 1, margin.top + plotH - barH, barW - 2, barH);
+        }
+
+        // Fit overlay
+        const fitType = document.getElementById('fit-select').value;
+        if (fitType !== 'none' && fillIdx > 100) {
+            drawFit(fitType, useLog, maxCount);
+        }
+
+        // Axes
+        ctx.strokeStyle = '#666';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(margin.left, margin.top + plotH); ctx.lineTo(margin.left + plotW, margin.top + plotH); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(margin.left, margin.top); ctx.lineTo(margin.left, margin.top + plotH); ctx.stroke();
+
+        // X labels
+        ctx.fillStyle = '#ccc';
+        ctx.font = '13px serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('pT (GeV/c)', margin.left + plotW / 2, H - 8);
+
+        ctx.font = '10px monospace';
+        ctx.fillStyle = '#999';
+        for (let v = 0; v <= ptMax; v += 0.5) {
+            const x = margin.left + (v / ptMax) * plotW;
+            ctx.fillText(v.toFixed(1), x, margin.top + plotH + 15);
+        }
+
+        // Y label
+        ctx.save();
+        ctx.translate(12, margin.top + plotH / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillStyle = '#ccc';
+        ctx.font = '13px serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(useLog ? 'Counts (log scale)' : 'Counts', 0, 0);
+        ctx.restore();
+
+        // Y tick labels
+        if (useLog) {
+            ctx.font = '9px monospace';
+            ctx.fillStyle = '#999';
+            ctx.textAlign = 'right';
+            for (let exp = 0; exp <= Math.log10(maxCount); exp += 1) {
+                const y = margin.top + plotH - (exp / Math.log10(maxCount)) * plotH;
+                ctx.fillText(`10^${exp}`, margin.left - 5, y + 4);
+            }
+        }
+
+        // Title
+        ctx.fillStyle = '#ddd';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.textAlign = 'center';
+        const pName = document.getElementById('particle-select').selectedOptions[0].text;
+        ctx.fillText(`pT Spectrum — ${pName} — ${fillIdx} particles`, margin.left + plotW / 2, margin.top - 12);
+
+        // Progress bar
+        const prog = fillIdx / particlePool.length;
+        ctx.fillStyle = 'rgba(102, 126, 234, 0.3)';
+        ctx.fillRect(margin.left, margin.top + plotH + 25, plotW * prog, 3);
+        ctx.fillStyle = '#667eea';
+        ctx.fillRect(margin.left, margin.top + plotH + 25, plotW * prog, 3);
+    }
+
+    function drawFit(type, useLog, maxCount) {
+        const mass = masses[document.getElementById('particle-select').value] || 0.140;
+
+        // Simple fit: find T by matching the mean
+        const filled = particlePool.slice(0, fillIdx);
+        const meanPt = filled.reduce((a, b) => a + b, 0) / filled.length;
+        const T = meanPt / 2.5; // approximate
+
+        // Evaluate fit function
+        const nPts = 200;
+        const fitCurve = [];
+        let fitMax = 0;
+
+        for (let i = 0; i < nPts; i++) {
+            const pT = ptMin + (ptMax - ptMin) * i / nPts;
+            let val;
+            const mT = Math.sqrt(pT * pT + mass * mass);
+
+            if (type === 'exponential') {
+                val = Math.exp(-pT / T);
+            } else if (type === 'boltzmann') {
+                val = pT * mT * Math.exp(-mT / T);
+            } else if (type === 'tsallis') {
+                const n = 7;
+                const nT = n * T;
+                val = pT * Math.pow(1 + (mT - mass) / nT, -n);
+            }
+            fitCurve.push(val);
+            if (val > fitMax) fitMax = val;
+        }
+
+        // Scale fit to match histogram
+        const histMax = Math.max(...histogram);
+        const scale = histMax / fitMax;
+
+        // Draw
+        ctx.strokeStyle = '#ff6b6b';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 3]);
+        ctx.beginPath();
+
+        for (let i = 0; i < nPts; i++) {
+            const pT = ptMin + (ptMax - ptMin) * i / nPts;
+            const val = fitCurve[i] * scale;
+            const x = margin.left + (pT / ptMax) * plotW;
+
+            let y;
+            if (useLog) {
+                y = val > 0 ? margin.top + plotH - (Math.log10(val) / Math.log10(maxCount)) * plotH : margin.top + plotH;
+            } else {
+                y = margin.top + plotH - (val / maxCount) * plotH;
+            }
+
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Update fit info
+        document.getElementById('fit-T').textContent = (T * 1000).toFixed(0) + ' MeV';
+
+        // Simple chi2
+        let chi2 = 0;
+        let ndf = 0;
+        for (let i = 0; i < nBins; i++) {
+            if (histogram[i] > 5) {
+                const pT = ptMin + (i + 0.5) * binWidth;
+                const mT = Math.sqrt(pT * pT + mass * mass);
+                let expected;
+                if (type === 'exponential') expected = Math.exp(-pT / T) * scale;
+                else if (type === 'boltzmann') expected = pT * mT * Math.exp(-mT / T) * scale;
+                else { const n = 7; expected = pT * Math.pow(1 + (mT - mass) / (n * T), -n) * scale; }
+                chi2 += (histogram[i] - expected) ** 2 / histogram[i];
+                ndf++;
+            }
+        }
+        document.getElementById('fit-chi2').textContent = ndf > 1 ? (chi2 / (ndf - 1)).toFixed(2) : '—';
+
+        // Legend
+        ctx.fillStyle = '#ff6b6b';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Fit: ${type} (T = ${(T*1000).toFixed(0)} MeV)`, margin.left + 10, margin.top + 15);
+    }
+
+    // Initialize
+    resetHist();
+    </script>
+</body>
+</html>
