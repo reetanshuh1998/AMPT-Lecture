@@ -16,11 +16,17 @@ pip install numpy matplotlib scipy jupyter
 ```
 
 ### 2. Slide Deck Compilation
-The master presentation slide deck covers the theoretical formulations and experimental detector physics. Compile the Beamer LaTeX deck:
-```bash
-pdflatex presentation.tex
-```
-*Result:* Success output generated in [presentation.pdf](file:///home/reet/AMPT-Lecture/presentation.pdf) (27 pages).
+The presentation slide decks cover the theoretical formulations and experimental detector physics for each day. Compile the Beamer LaTeX decks:
+*   **Day 1 Slide Deck:**
+    ```bash
+    pdflatex presentation.tex
+    ```
+    *Result:* PDF output generated in [presentation.pdf](file:///home/reet/AMPT-Lecture/presentation.pdf) (30 pages).
+*   **Day 2 Slide Deck:**
+    ```bash
+    pdflatex presentation_day2.tex
+    ```
+    *Result:* PDF output generated in [presentation_day2.pdf](file:///home/reet/AMPT-Lecture/presentation_day2.pdf) (11 pages).
 
 ### 3. Open Laboratory Notebooks
 Launch Jupyter to access the hands-on exercises and full solution references:
@@ -33,13 +39,14 @@ jupyter notebook exercises/day01_hands_on.ipynb
 ---
 
 ## 🎨 Interactive HTML5/JS Physics Simulators
-The course includes **9 fully functional, interactive animations** located in the `animations/` folder. They can be opened in any web browser instantly to dynamically explore relativistic kinematics:
+The course includes **10 fully functional, interactive animations** located in the `animations/` and `day2/` folders. They can be opened in any web browser instantly to dynamically explore relativistic kinematics:
 
 *   🌐 **[Velocity Saturation Comparison](file:///home/reet/AMPT-Lecture/animations/01_velocity_saturation_comparison.html)** — Classical vs. Relativistic velocity addition: see why successive boosts saturate at $c$, validating Day 1 Laboratory Problem 1.
 *   🌐 **[Spacetime Minkowski Diagram](file:///home/reet/AMPT-Lecture/animations/02_spacetime_minkowski_diagram.html)** — Interactive Lorentz boosts: watch hyperbolic axis rotations, moving grids skewing, and toggle the Simultaneity Demo!
 *   🌐 **[Resolution vs. Energy Explorer](file:///home/reet/AMPT-Lecture/animations/03_debroglie_resolution_probing.html)** — Wave-particle duality de Broglie wave probe, Airy disk resolution, and concentric target shell penetration visualizer. Validates Slide 4.
 *   🌐 **[QCD Confinement & Screening](file:///home/reet/AMPT-Lecture/animations/04_qcd_confinement_screening.html)** — Cornell static potential snapping in vacuum, and Debye color screening charmonium melting in QGP. Validates Slide 3.
 *   🌐 **[Polar Angle vs. Pseudorapidity](file:///home/reet/AMPT-Lecture/animations/05_pseudorapidity_detector_angle.html)** — Concentric onion-layer detector tracker and Plotly curve mapping polar sweep angle $\theta$ to pseudorapidity $\eta$. Validates Slide 27.
+*   🌐 **[Jacobian & Mass-Effect Explorer](file:///home/reet/AMPT-Lecture/day2/day2_rapidity_jacobian_explorer.html)** — Interactive $p_T$, mass, and rapidity sweep dashboard illustrating the coordinate transformation Jacobian $\mathrm{d}y/\mathrm{d}\eta = p/E$ and the resulting mid-rapidity dip. Validates Day 2 Slide 7.
 *   🌐 **[Collision Kinematics](file:///home/reet/AMPT-Lecture/animations/collision_animation.html)** — Run colliding beams and target nuclei to observe fixed-target center-of-mass energy limits vs. collider linear advantages.
 *   🌐 **[Lorentz Boost Demonstrator](file:///home/reet/AMPT-Lecture/animations/rapidity_boost.html)** — Dynamically apply collinear boosts to observe relativistic velocity addition saturation at $c$ while rapidity adds linearly.
 *   🌐 **[TPC event display](file:///home/reet/AMPT-Lecture/animations/event_display.html)** — An interactive 3D event tracker simulating charged hadron curvature inside a Time Projection Chamber under high magnetic fields.

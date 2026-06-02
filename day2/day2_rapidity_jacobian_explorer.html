@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 2: Rapidity Jacobian & Mass Effect Explorer</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0b0f19;
+            color: #f8fafc;
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 1300px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            margin-top: 20px;
+        }
+        @media (min-width: 950px) {
+            .container {
+                grid-template-columns: 0.85fr 1.15fr;
+            }
+        }
+        .panel {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+        }
+        .header-panel {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(6, 182, 212, 0.15) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            text-align: left;
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 12px;
+        }
+        .header-panel h1 {
+            font-size: 26px;
+            font-weight: 700;
+            background: linear-gradient(to right, #cbd5e1, #818cf8, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        .header-panel p {
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .control-group {
+            margin-bottom: 20px;
+        }
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #cbd5e1;
+        }
+        .control-label span.value {
+            font-family: 'JetBrains Mono', monospace;
+            color: #22d3ee;
+            font-weight: 700;
+            font-size: 16px;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #1e293b;
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #22d3ee;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+            transition: transform 0.1s, background-color 0.1s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+            background: #818cf8;
+        }
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        button.preset-btn {
+            background: rgba(255, 255, 255, 0.05);
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 8px 4px;
+            font-size: 11px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        button.preset-btn:hover, button.preset-btn.active {
+            background: rgba(34, 211, 238, 0.15);
+            color: #22d3ee;
+            border-color: #22d3ee;
+            transform: translateY(-1px);
+        }
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button.action-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: none;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+            transform: translateY(-1px);
+        }
+        .btn-pause {
+            background: #d97706;
+            color: white;
+            box-shadow: 0 4px 14px rgba(217, 119, 6, 0.3);
+        }
+        .btn-pause:hover:not(:disabled) {
+            background: #f59e0b;
+            transform: translateY(-1px);
+        }
+        .btn-pause:disabled {
+            background: #334155;
+            color: #64748b;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        .btn-reset {
+            background: #475569;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-reset:hover {
+            background: #64748b;
+            transform: translateY(-1px);
+        }
+        .status-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 8px 0 16px 0;
+            font-size: 13px;
+            color: #94a3b8;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #475569;
+            transition: all 0.3s ease;
+        }
+        .status-dot.active {
+            background-color: #10b981;
+            box-shadow: 0 0 10px #10b981;
+            animation: sweep-pulse 1.5s infinite;
+        }
+        .status-dot.paused {
+            background-color: #f59e0b;
+            box-shadow: 0 0 10px #f59e0b;
+        }
+        @keyframes sweep-pulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+        .metric-card h4 {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+        }
+        .metric-card p {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            color: #22d3ee;
+        }
+        .metric-card.highlight {
+            grid-column: span 2;
+            border: 1px solid rgba(34, 211, 238, 0.2);
+            background: rgba(34, 211, 238, 0.03);
+        }
+        .metric-card.highlight p {
+            color: #10b981;
+            font-size: 16px;
+        }
+        .info-panel {
+            margin-top: 20px;
+            border-left: 4px solid #22d3ee;
+            background: rgba(34, 211, 238, 0.05);
+            padding: 16px;
+            border-radius: 0 12px 12px 0;
+        }
+        .info-panel h3 {
+            font-size: 15px;
+            color: #22d3ee;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .info-panel ul {
+            list-style-type: none;
+            font-size: 13px;
+            color: #cbd5e1;
+            line-height: 1.6;
+        }
+        .info-panel li {
+            margin-bottom: 6px;
+            position: relative;
+            padding-left: 18px;
+        }
+        .info-panel li::before {
+            content: "•";
+            color: #22d3ee;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            font-size: 18px;
+            top: -2px;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+        .visual-card {
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        .visual-card h3 {
+            font-size: 15px;
+            color: #a5b4fc;
+            margin-bottom: 12px;
+            align-self: flex-start;
+            font-weight: 600;
+            border-left: 3px solid #22d3ee;
+            padding-left: 8px;
+        }
+        canvas {
+            background: #090d16;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Control Panel -->
+        <div class="panel">
+            <div class="header-panel">
+                <h1>📐 Jacobian & Mass-Effect Explorer</h1>
+                <p>Day 2 Masterclass: Visualize how standard momentum rapidity ($y$) maps to angular pseudorapidity ($\eta$). Study the coordinate transformation Jacobian $\mathrm{d}y/\mathrm{d}\eta = p/E = \beta$ which creates the physical mid-rapidity dip at $\eta=0$ for massive particles.</p>
+            </div>
+
+            <!-- Species selector -->
+            <div class="control-group">
+                <label class="control-label">Particle Species (Mass Selector)</label>
+                <div class="preset-grid">
+                    <button class="preset-btn active" id="btn-pi" onclick="setSpecies('pi')">Pion (0.14 GeV)</button>
+                    <button class="preset-btn" id="btn-k" onclick="setSpecies('K')">Kaon (0.49 GeV)</button>
+                    <button class="preset-btn" id="btn-p" onclick="setSpecies('p')">Proton (0.94 GeV)</button>
+                    <button class="preset-btn" id="btn-heavy" onclick="setSpecies('heavy')">Omega (1.67 GeV)</button>
+                </div>
+            </div>
+
+            <!-- pT slider -->
+            <div class="control-group">
+                <div class="control-label">
+                    <label for="ptSlider">Transverse Momentum (p<sub>T</sub>)</label>
+                    <span class="value" id="ptDisplay">0.30 GeV/c</span>
+                </div>
+                <input type="range" id="ptSlider" min="0.05" max="3.0" step="0.05" value="0.30"
+                       oninput="manualUpdatePT(this.value)">
+            </div>
+
+            <!-- active angle/rapidity sweep tracker slider -->
+            <div class="control-group">
+                <div class="control-label">
+                    <label for="ySlider">Collinear Rapidity (y)</label>
+                    <span class="value" id="yDisplay">0.00</span>
+                </div>
+                <input type="range" id="ySlider" min="-3.0" max="3.0" step="0.05" value="0.00"
+                       oninput="manualUpdateY(this.value)">
+            </div>
+
+            <!-- Animation Controls -->
+            <div class="button-group">
+                <button id="btn-animate" class="action-btn btn-primary" onclick="toggleAnimation()"><span>▶</span> Play pT Scan</button>
+                <button id="btn-pause" class="action-btn btn-pause" onclick="togglePause()" disabled><span>⏸</span> Pause</button>
+                <button class="action-btn btn-reset" onclick="resetExplorer()"><span>🔄</span> Reset</button>
+            </div>
+
+            <div class="control-group" style="margin-top: 5px;">
+                <label for="speedSelect" class="control-label" style="margin-bottom: 6px;">Sweep Speed</label>
+                <select id="speedSelect" onchange="updateSpeed(this.value)" style="width: 100%; padding: 10px 14px; background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #f8fafc; font-family: 'Outfit', sans-serif; font-size: 13px; outline: none; cursor: pointer;">
+                    <option value="0.5">0.5x Speed (Slow Scan)</option>
+                    <option value="1" selected>1.0x Speed (Normal Scan)</option>
+                    <option value="2">2.0x Speed (Fast Scan)</option>
+                </select>
+            </div>
+
+            <div class="status-container">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">SCAN IDLE</span>
+            </div>
+
+            <!-- Live Metrics -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h4>Transverse Mass (m<sub>T</sub>)</h4>
+                    <p id="metric-mt">0.33 GeV/c²</p>
+                </div>
+                <div class="metric-card">
+                    <h4>Velocity (β = v/c)</h4>
+                    <p id="metric-beta">0.903</p>
+                </div>
+                <div class="metric-card">
+                    <h4>Pseudorapidity (η)</h4>
+                    <p id="metric-eta">0.000</p>
+                </div>
+                <div class="metric-card">
+                    <h4>Polar Angle (θ)</h4>
+                    <p id="metric-theta">90.0°</p>
+                </div>
+                <div class="metric-card highlight">
+                    <h4>Jacobian Factor J(y) = dη/dy = p/E</h4>
+                    <p id="metric-jacobian">J = 0.903 (10% Suppression)</p>
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <h3>Theoretical Physics Insights:</h3>
+                <ul>
+                    <li><strong>Mass-Dependent Jacobian</strong>: The conversion is scaled by $J = p/E$. Because $E = \sqrt{m_T^2 \cosh^2 y}$, heavier mass suppresses the Jacobian.</li>
+                    <li><strong>Mid-rapidity Dip</strong>: At $y = 0$, $J = p_T / \sqrt{p_T^2 + m^2}$. As $p_T \to 0$ or $m \to \infty$, $J \to 0$, creating a deep dip in $dN/d\eta$ at $\eta=0$.</li>
+                    <li><strong>Massless / High-p<sub>T</sub> Limit</strong>: As $p_T \gg m$, the particle becomes ultra-relativistic ($\beta \to 1$), the Jacobian factor $J \to 1$, and $\eta \approx y$.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Visualization Panel -->
+        <div class="dashboard-grid">
+            <div class="visual-card">
+                <h3>⚛ Real-time Particle Trajectory & Detector curvature</h3>
+                <canvas id="trajectoryCanvas" width="500" height="300"></canvas>
+            </div>
+            <div class="visual-card">
+                <h3>📈 Jacobian Suppression Factor J(y) vs. y</h3>
+                <div id="jacobianPlot" style="width: 100%; height: 220px;"></div>
+            </div>
+            <div class="visual-card">
+                <h3>📊 Resulting Density Distributions (dN/dy vs. dN/dη)</h3>
+                <div id="densityPlot" style="width: 100%; height: 220px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('trajectoryCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Particle masses (GeV)
+        const masses = {
+            pi: 0.13957,
+            K: 0.49368,
+            p: 0.93827,
+            heavy: 1.67245
+        };
+
+        // Active State variables
+        let currentSpecies = 'pi';
+        let mass = masses[currentSpecies];
+        let pT = 0.30; // GeV/c
+        let y = 0.00; // rapidity
+        let animationSpeed = 1.0;
+        let isAnimating = false;
+        let isPaused = false;
+        let animationInterval = null;
+        let ptDirection = 1; // 1 = increasing, -1 = decreasing
+
+        function setSpecies(sp) {
+            currentSpecies = sp;
+            mass = masses[sp];
+            
+            // Toggle active class on preset buttons
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${sp}`).classList.add('active');
+            
+            updateSimulation();
+        }
+
+        function manualUpdatePT(val) {
+            stopAnimation();
+            pT = parseFloat(val);
+            document.getElementById('ptDisplay').textContent = pT.toFixed(2) + ' GeV/c';
+            updateSimulation();
+        }
+
+        function manualUpdateY(val) {
+            y = parseFloat(val);
+            document.getElementById('yDisplay').textContent = y.toFixed(2);
+            updateSimulation();
+        }
+
+        function calculatePhysics(m, ptVal, yVal) {
+            const mT = Math.sqrt(ptVal**2 + m**2);
+            const E = mT * Math.cosh(yVal);
+            const pz = mT * Math.sinh(yVal);
+            const p = Math.sqrt(ptVal**2 + pz**2);
+            
+            // Pseudorapidity calculation
+            const eta = yVal === 0 && ptVal === 0 ? 0 : 0.5 * Math.log((p + pz) / Math.max(p - pz, 1e-15));
+            const beta = p / Math.max(E, 1e-15);
+            const thetaRad = Math.atan2(ptVal, pz);
+            const thetaDeg = (thetaRad * 180) / Math.PI;
+
+            // Jacobian factor J(y) = p/E = beta
+            const jacobian = beta;
+
+            return { mT, E, pz, p, eta, beta, thetaRad, thetaDeg, jacobian };
+        }
+
+        function drawTrajectory(phys) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#090d16';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const cX = canvas.width / 2;
+            const cY = canvas.height - 30; // collision point near bottom center
+            const R_max = 200;
+
+            // Draw detector layers as concentric arcs
+            const layers = [
+                { r: 60, color: 'rgba(56, 189, 248, 0.1)', name: 'Silicon Tracker' },
+                { r: 130, color: 'rgba(99, 102, 241, 0.08)', name: 'TPC Gas Chamber' },
+                { r: 190, color: 'rgba(236, 72, 153, 0.06)', name: 'Calorimeter' }
+            ];
+
+            layers.forEach(layer => {
+                ctx.strokeStyle = layer.color;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(cX, cY, layer.r, Math.PI, 2 * Math.PI);
+                ctx.stroke();
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+                ctx.font = '8px JetBrains Mono, monospace';
+                ctx.fillText(layer.name, cX - layer.r + 5, cY - 4);
+            });
+
+            // Beam line
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(20, cY);
+            ctx.lineTo(canvas.width - 20, cY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillText('BEAM PIPE (z)', 25, cY + 14);
+
+            // Sweeping particle trajectory
+            // We draw the angle according to theta.
+            // On screen, theta = 90 deg is straight up (direction -y).
+            // theta = 0 is horizontal right (+x).
+            // theta = 180 is horizontal left (-x).
+            const screenRad = -phys.thetaRad;
+            const destX = cX + Math.cos(screenRad) * R_max;
+            const destY = cY + Math.sin(screenRad) * R_max;
+
+            // Glowing track
+            ctx.strokeStyle = '#22d3ee';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(cX, cY);
+            ctx.lineTo(destX, destY);
+            ctx.stroke();
+
+            // Track halo
+            ctx.strokeStyle = 'rgba(34, 211, 238, 0.25)';
+            ctx.lineWidth = 6;
+            ctx.beginPath(); ctx.moveTo(cX, cY); ctx.lineTo(destX, destY); ctx.stroke();
+
+            // Draw particle as a moving pulse
+            const timePulse = (Date.now() % 1500) / 1500;
+            const pulseX = cX + Math.cos(screenRad) * R_max * timePulse;
+            const pulseY = cY + Math.sin(screenRad) * R_max * timePulse;
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(pulseX, pulseY, 5, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Collision vertex
+            ctx.fillStyle = '#e11d48';
+            ctx.beginPath();
+            ctx.arc(cX, cY, 5, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Display angle text
+            ctx.strokeStyle = '#fbbf24';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(cX, cY, 35, Math.PI, Math.PI + (Math.PI - phys.thetaRad));
+            ctx.stroke();
+
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = '10px Outfit, sans-serif';
+            ctx.fillText(`θ = ${phys.thetaDeg.toFixed(1)}°`, cX + Math.cos(screenRad/2) * 50 - 15, cY + Math.sin(screenRad/2) * 50 - 5);
+        }
+
+        function updatePlots(phys) {
+            // Plot 1: Jacobian vs y
+            const yArr = [];
+            const jArr = [];
+            for (let val = -3.0; val <= 3.0; val += 0.1) {
+                yArr.push(val);
+                const p = calculatePhysics(mass, pT, val);
+                jArr.push(p.jacobian);
+            }
+
+            const traceJLine = {
+                x: yArr,
+                y: jArr,
+                mode: 'lines',
+                name: 'Jacobian J(y)',
+                line: { color: '#818cf8', width: 3 },
+                fill: 'tozeroy',
+                fillcolor: 'rgba(129, 140, 248, 0.08)'
+            };
+
+            const traceJDot = {
+                x: [y],
+                y: [phys.jacobian],
+                mode: 'markers',
+                name: 'Current State',
+                marker: { size: 10, color: '#22d3ee', symbol: 'diamond', line: { color: '#ffffff', width: 1 } }
+            };
+
+            const layoutJ = {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                template: 'plotly_dark',
+                margin: { t: 10, b: 30, l: 45, r: 15 },
+                xaxis: { title: 'Rapidity y', gridcolor: '#1e293b', linecolor: '#334155', range: [-3, 3] },
+                yaxis: { title: 'Jacobian J = p/E', gridcolor: '#1e293b', linecolor: '#334155', range: [0, 1.15] },
+                showlegend: false
+            };
+
+            Plotly.newPlot('jacobianPlot', [traceJLine, traceJDot], layoutJ, { responsive: true, displayModeBar: false });
+
+            // Plot 2: dN/dy vs dN/deta distributions
+            // We assume dN/dy is a smooth Gaussian: dN/dy = N0 * exp(-y^2 / 2σ_y^2)
+            // Then dN/deta = J(y) * dN/dy, where y is evaluated from eta
+            // Wait, we can generate the distribution by scanning eta, calculating corresponding y and Jacobian, and multiplying.
+            const etaArr = [];
+            const dNdyArr = [];
+            const dNdetaArr = [];
+            const sigma_y = 1.2;
+
+            for (let eVal = -3.5; eVal <= 3.5; eVal += 0.1) {
+                etaArr.push(eVal);
+                
+                // For a given eta, what is y?
+                // y = 0.5 * ln( (sqrt(mT^2 + pz^2) + pz) / (sqrt(mT^2 + pz^2) - pz) )?
+                // Actually: pz = pT * sinh(eta), mT = sqrt(pT^2 + m^2), E = sqrt(mT^2 + pz^2) = sqrt(pT^2 + m^2 + pT^2 sinh^2 eta)
+                // From this we calculate E, and y = 0.5 * ln( (E + pz)/(E - pz) ).
+                const pz_val = pT * Math.sinh(eVal);
+                const E_val = Math.sqrt(pT**2 + mass**2 + pz_val**2);
+                const y_val = 0.5 * Math.log((E_val + pz_val) / Math.max(E_val - pz_val, 1e-15));
+
+                const J_val = Math.sqrt(pT**2 + pz_val**2) / Math.max(E_val, 1e-15);
+
+                const dNdy_val = Math.exp(-y_val**2 / (2 * sigma_y**2));
+                const dNdeta_val = J_val * dNdy_val;
+
+                dNdyArr.push(dNdy_val);
+                dNdetaArr.push(dNdeta_val);
+            }
+
+            // Also find current y / eta densities
+            const current_dNdy = Math.exp(-y**2 / (2 * sigma_y**2));
+            const current_dNdeta = phys.jacobian * current_dNdy;
+
+            const tracedNdy = {
+                x: etaArr, // plot on same axis to compare shape shift
+                y: dNdyArr,
+                mode: 'lines',
+                name: 'dN/dy (Flat/Gaussian Input)',
+                line: { color: '#ef4444', width: 2, dash: 'dash' }
+            };
+
+            const tracedNdeta = {
+                x: etaArr,
+                y: dNdetaArr,
+                mode: 'lines',
+                name: 'dN/dη (Jacobian Mapped)',
+                line: { color: '#10b981', width: 3.5 },
+                fill: 'tozeroy',
+                fillcolor: 'rgba(16, 185, 129, 0.08)'
+            };
+
+            const traceCurrentEtaDot = {
+                x: [phys.eta],
+                y: [current_dNdeta],
+                mode: 'markers',
+                name: 'Current η Value',
+                marker: { size: 10, color: '#10b981', symbol: 'circle', line: { color: '#ffffff', width: 1 } }
+            };
+
+            const layoutD = {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                template: 'plotly_dark',
+                margin: { t: 10, b: 30, l: 45, r: 15 },
+                xaxis: { title: 'y or η', gridcolor: '#1e293b', linecolor: '#334155', range: [-3.5, 3.5] },
+                yaxis: { title: 'Normalized Yield', gridcolor: '#1e293b', linecolor: '#334155', range: [0, 1.2] },
+                legend: { x: 0.02, y: 0.98, font: { size: 9 }, bg: 'rgba(0,0,0,0)' }
+            };
+
+            Plotly.newPlot('densityPlot', [tracedNdy, tracedNdeta, traceCurrentEtaDot], layoutD, { responsive: true, displayModeBar: false });
+        }
+
+        function updateSimulation() {
+            const phys = calculatePhysics(mass, pT, y);
+
+            // Update Metrics Cards
+            document.getElementById('metric-mt').textContent = phys.mT.toFixed(3) + ' GeV/c²';
+            document.getElementById('metric-beta').textContent = phys.beta.toFixed(3);
+            document.getElementById('metric-eta').textContent = phys.eta.toFixed(3);
+            document.getElementById('metric-theta').textContent = phys.thetaDeg.toFixed(1) + '°';
+
+            const suppPct = Math.round((1 - phys.jacobian) * 100);
+            document.getElementById('metric-jacobian').innerHTML = `J = ${phys.jacobian.toFixed(3)} <span style="font-size:10px; color:#cbd5e1; display:block;">(${suppPct}% Suppression at mid-rapidity)</span>`;
+
+            drawTrajectory(phys);
+            updatePlots(phys);
+        }
+
+        // Live particle updates loop
+        setInterval(() => {
+            const phys = calculatePhysics(mass, pT, y);
+            drawTrajectory(phys);
+        }, 40);
+
+        // Animation Scan loop for pT
+        function toggleAnimation() {
+            if (isAnimating) {
+                stopAnimation();
+            } else {
+                startAnimation();
+            }
+        }
+
+        function startAnimation() {
+            isAnimating = true;
+            isPaused = false;
+            updateStatus('running');
+            document.getElementById('btn-animate').innerHTML = `<span>⏹</span> Stop Scan`;
+            document.getElementById('btn-animate').style.background = "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
+            document.getElementById('btn-pause').disabled = false;
+            document.getElementById('btn-pause').innerHTML = `<span>⏸</span> Pause`;
+            document.getElementById('btn-pause').style.background = "#d97706";
+
+            if (animationInterval) clearInterval(animationInterval);
+
+            // We loop pT between 0.05 and 2.0 GeV/c
+            animationInterval = setInterval(() => {
+                if (isPaused) return;
+
+                let step = 0.02 * animationSpeed;
+                pT += step * ptDirection;
+
+                if (pT >= 2.0) {
+                    pT = 2.0;
+                    ptDirection = -1;
+                } else if (pT <= 0.05) {
+                    pT = 0.05;
+                    ptDirection = 1;
+                }
+
+                document.getElementById('ptSlider').value = pT;
+                document.getElementById('ptDisplay').textContent = pT.toFixed(2) + ' GeV/c';
+                updateSimulation();
+            }, 30);
+        }
+
+        function stopAnimation() {
+            isAnimating = false;
+            isPaused = false;
+            updateStatus('idle');
+            if (animationInterval) clearInterval(animationInterval);
+            document.getElementById('btn-animate').innerHTML = `<span>▶</span> Play pT Scan`;
+            document.getElementById('btn-animate').style.background = "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)";
+            document.getElementById('btn-pause').disabled = true;
+            document.getElementById('btn-pause').innerHTML = `<span>⏸</span> Pause`;
+            document.getElementById('btn-pause').style.background = "#334155";
+        }
+
+        function togglePause() {
+            if (!isAnimating) return;
+            isPaused = !isPaused;
+            if (isPaused) {
+                updateStatus('paused');
+                document.getElementById('btn-pause').innerHTML = `<span>▶</span> Resume`;
+                document.getElementById('btn-pause').style.background = "#16a34a";
+            } else {
+                updateStatus('running');
+                document.getElementById('btn-pause').innerHTML = `<span>⏸</span> Pause`;
+                document.getElementById('btn-pause').style.background = "#d97706";
+            }
+        }
+
+        function updateSpeed(val) {
+            animationSpeed = parseFloat(val);
+        }
+
+        function updateStatus(state) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            if (!dot || !text) return;
+            dot.className = 'status-dot';
+            if (state === 'running') {
+                dot.classList.add('active');
+                text.textContent = 'SCAN ACTIVE';
+            } else if (state === 'paused') {
+                dot.classList.add('paused');
+                text.textContent = 'SCAN PAUSED';
+            } else {
+                text.textContent = 'SCAN IDLE';
+            }
+        }
+
+        function resetExplorer() {
+            stopAnimation();
+            pT = 0.30;
+            y = 0.00;
+            document.getElementById('ptSlider').value = pT;
+            document.getElementById('ySlider').value = y;
+            document.getElementById('ptDisplay').textContent = pT.toFixed(2) + ' GeV/c';
+            document.getElementById('yDisplay').textContent = y.toFixed(2);
+            setSpecies('pi');
+        }
+
+        // Initial setup
+        setSpecies('pi');
+    </script>
+</body>
+</html>
