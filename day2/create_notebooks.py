@@ -216,9 +216,9 @@ def generate_notebooks():
             "\n",
             "# Particle configurations\n",
             "species = {\n",
-            "    r'Pions ($\\pi^\\pm$)': {'pid': 211, 'color': 'blue', 'marker': 'o'},\n",
-            "    r'Kaons ($K^\\pm$)': {'pid': 321, 'color': 'green', 'marker': 's'},\n",
-            "    r'Protons ($p/\\bar{p}$)': {'pid': 2212, 'color': 'red', 'marker': '^'}\n",
+            "    'Pions ($\\\\pi^\\\\pm$)': {'pid': 211, 'color': 'blue', 'marker': 'o'},\n",
+            "    'Kaons ($K^\\\\pm$)': {'pid': 321, 'color': 'green', 'marker': 's'},\n",
+            "    'Protons ($p/\\\\bar{p}$)': {'pid': 2212, 'color': 'red', 'marker': '^'}\n",
             "}\n",
             "\n",
             "# Histogram configuration\n",
@@ -244,7 +244,9 @@ def generate_notebooks():
             "ax.set_xlim(-2.2, 2.2)\n",
             "ax.set_ylim(0.4, 1.15)\n",
             "ax.grid(True, linestyle=':', alpha=0.5)\n",
-            "ax.legend(frameon=True, fontsize=11)\n",
+            "handles, labels = ax.get_legend_handles_labels()\n",
+            "if labels:\n",
+            "    ax.legend(frameon=True, fontsize=11)\n",
             "plt.show()"
         ]
     })
@@ -449,9 +451,9 @@ def generate_notebooks():
             "filepath = \"../Data/subsets/ampt_39_sub100.dat\"\n",
             "\n",
             "species = {\n",
-            "    r'Pions ($\\pi^\\pm$)': {'pid': 211, 'color': '#3b82f6', 'marker': 'o'},\n",
-            "    r'Kaons ($K^\\pm$)': {'pid': 321, 'color': '#10b981', 'marker': 's'},\n",
-            "    r'Protons ($p/\\bar{p}$)': {'pid': 2212, 'color': '#ef4444', 'marker': '^'}\n",
+            "    'Pions ($\\\\pi^\\\\pm$)': {'pid': 211, 'color': '#3b82f6', 'marker': 'o'},\n",
+            "    'Kaons ($K^\\\\pm$)': {'pid': 321, 'color': '#10b981', 'marker': 's'},\n",
+            "    'Protons ($p/\\\\bar{p}$)': {'pid': 2212, 'color': '#ef4444', 'marker': '^'}\n",
             "}\n",
             "\n",
             "bins = np.linspace(-2.5, 2.5, 35)\n",
@@ -492,7 +494,9 @@ def generate_notebooks():
             "ax.set_xlim(-2.2, 2.2)\n",
             "ax.set_ylim(0.4, 1.15)\n",
             "ax.grid(True, linestyle=':', alpha=0.5)\n",
-            "ax.legend(frameon=True, fontsize=11)\n",
+            "handles, labels = ax.get_legend_handles_labels()\n",
+            "if labels:\n",
+            "    ax.legend(frameon=True, fontsize=11)\n",
             "plt.show()"
         ]
     })
