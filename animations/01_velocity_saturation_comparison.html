@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Velocity Addition: Classical vs Relativistic</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 1200px; margin: 20px auto; background: #fafafa; color: #333; }
+        .header { background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; }
+        .header p { margin: 5px 0 0 0; opacity: 0.9; }
+        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin: 25px 0; }
+        .plot { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #eaeaea; }
+        .controls { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #eaeaea; }
+        .slider-group { margin: 20px 0; display: flex; align-items: center; justify-content: space-between; }
+        .slider-group label { font-weight: 600; font-size: 15px; flex: 1; }
+        .slider-group input { flex: 2; margin: 0 20px; }
+        .slider-group strong { color: #1e3c72; }
+        button { padding: 10px 25px; background: #1e3c72; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; transition: background 0.2s; }
+        button:hover { background: #2a5298; }
+        .info { background: #e3f2fd; padding: 18px; border-radius: 8px; margin: 20px 0; border-left: 5px solid #1e3c72; line-height: 1.6; }
+        .formula-box { background: #f1f8e9; padding: 18px; border-radius: 8px; margin: 20px 0; border-left: 5px solid #8bc34a; line-height: 1.6; }
+        code { background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 3px; font-family: monospace; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Day 1: Relativistic Velocity Saturation Simulator</h1>
+        <p>Textbook Verification: Compare Classical vs Relativistic Velocity Addition over Successive Boosts</p>
+    </div>
+
+    <div class="controls">
+        <div class="slider-group">
+            <label>Number of Boosts: <strong id="nBoosts">10</strong></label>
+            <input type="range" id="boostSlider" min="1" max="20" value="10" 
+                   oninput="updateBoosts(this.value)">
+        </div>
+        <div class="slider-group">
+            <label>Individual Boost Size: <strong id="boostSize">0.10</strong>c</label>
+            <input type="range" id="sizeSlider" min="0.05" max="0.3" step="0.05" value="0.1" 
+                   oninput="updateBoostSize(this.value)">
+        </div>
+        <button onclick="reset()">🔄 Reset</button>
+    </div>
+
+    <div class="info">
+        <strong>Physical Interpretation:</strong><br>
+        • Classical: <span style="color: #d32f2f; font-weight: bold;">Velocity grows linearly without bound → exceeds c (violates causality!)</span><br>
+        • Relativistic: <span style="color: #1976d2; font-weight: bold;">Velocity asymptotically saturates at c (speed of light as the universal speed limit)</span><br>
+        Your student laboratory output <code>day01_problem1_velocity_rapidity.png</code> validates this exact kinematic divergence!
+    </div>
+
+    <div class="container">
+        <div id="classicalPlot" class="plot" style="height: 400px;"></div>
+        <div id="relativisticPlot" class="plot" style="height: 400px;"></div>
+    </div>
+
+    <div class="formula-box">
+        <strong>Key Mathematical Formulations (Sahoo Chapter 5):</strong><br>
+        • Relativistic Velocity Addition: <code>w = (v + u) / (1 + vu/c²)</code><br>
+        • When <code>v → c</code> or <code>u → c</code>, the combined velocity <code>w → c</code>, proving that the speed of light is the absolute, invariant limit in Minkowski spacetime.
+    </div>
+
+    <script>
+        let numBoosts = 10;
+        let boostSize = 0.1;
+
+        function updateBoosts(val) {
+            numBoosts = parseInt(val);
+            document.getElementById('nBoosts').textContent = numBoosts;
+            updatePlots();
+        }
+
+        function updateBoostSize(val) {
+            boostSize = parseFloat(val);
+            document.getElementById('boostSize').textContent = boostSize.toFixed(2);
+            updatePlots();
+        }
+
+        function updatePlots() {
+            let classical = [0];
+            let relativistic = [0];
+
+            for (let i = 0; i < numBoosts; i++) {
+                // Classical
+                let v_c = classical[i] + boostSize;
+                classical.push(v_c);
+
+                // Relativistic: w = (v + u) / (1 + vu)
+                let v_r = relativistic[i];
+                let v_new = (v_r + boostSize) / (1 + v_r * boostSize);
+                relativistic.push(v_new);
+            }
+
+            let x = Array.from({length: classical.length}, (_, i) => i);
+
+            // Classical plot
+            let trace1 = {
+                x: x, y: classical,
+                mode: 'lines+markers+text',
+                name: 'Classical: v_total = Σv_i',
+                line: {color: '#d32f2f', width: 3},
+                marker: {size: 8, color: '#d32f2f'},
+                text: classical.map(v => v.toFixed(2) + 'c'),
+                textposition: 'top center',
+                textfont: {size: 10, color: '#d32f2f'}
+            };
+
+            let cLimit = Array(classical.length).fill(1.0);
+            let trace2 = {
+                x: x, y: cLimit,
+                mode: 'lines',
+                name: 'Speed of Light (c = 1.0)',
+                line: {color: '#333', width: 2, dash: 'dash'},
+                showlegend: true
+            };
+
+            Plotly.newPlot('classicalPlot', [trace1, trace2], {
+                title: 'Classical Velocity Addition (Unphysical)',
+                xaxis: {title: 'Lorentz Boost Step'},
+                yaxis: {title: 'Velocity (units of c)', range: [0, Math.max(classical[classical.length-1]*1.1, 2.0)]},
+                hovermode: 'closest'
+            }, {responsive: true});
+
+            // Relativistic plot
+            let trace3 = {
+                x: x, y: relativistic,
+                mode: 'lines+markers+text',
+                name: 'Relativistic: w = (v+u)/(1+vu)',
+                line: {color: '#1976d2', width: 3},
+                marker: {size: 8, color: '#1976d2'},
+                text: relativistic.map(v => v.toFixed(3) + 'c'),
+                textposition: 'top center',
+                textfont: {size: 10, color: '#1976d2'}
+            };
+
+            let cLimit2 = Array(relativistic.length).fill(1.0);
+            let trace4 = {
+                x: x, y: cLimit2,
+                mode: 'lines',
+                name: 'c = 1.0 (invariant limit)',
+                line: {color: '#333', width: 2, dash: 'dash'},
+                showlegend: true
+            };
+
+            Plotly.newPlot('relativisticPlot', [trace3, trace4], {
+                title: 'Relativistic Velocity Addition (Physical)',
+                xaxis: {title: 'Lorentz Boost Step'},
+                yaxis: {title: 'Velocity (units of c)', range: [0, 1.1]},
+                hovermode: 'closest'
+            }, {responsive: true});
+        }
+
+        function reset() {
+            document.getElementById('boostSlider').value = 10;
+            document.getElementById('sizeSlider').value = 0.1;
+            updateBoosts(10);
+            updateBoostSize(0.1);
+        }
+
+        updatePlots();
+    </script>
+</body>
+</html>

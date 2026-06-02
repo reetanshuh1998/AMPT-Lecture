@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Minkowski Spacetime Diagram</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 1000px; margin: 20px auto; background: #fafafa; color: #333; }
+        .header { background: linear-gradient(135deg, #11998e, #38ef7d); color: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; }
+        .header p { margin: 5px 0 0 0; opacity: 0.95; }
+        canvas { border: 1px solid #ddd; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: block; margin: 0 auto; }
+        .controls { background: white; padding: 20px; border-radius: 8px; margin: 20px auto; max-width: 700px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #eaeaea; }
+        .control-group { margin: 15px 0; display: flex; align-items: center; justify-content: space-between; }
+        .control-group label { font-weight: 600; font-size: 15px; flex: 1; }
+        .control-group input { flex: 2; margin: 0 20px; }
+        .control-group span { font-weight: bold; color: #11998e; font-size: 16px; }
+        .button-group { text-align: center; margin-top: 15px; }
+        button { padding: 10px 25px; background: #11998e; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; transition: background 0.2s; }
+        button:hover { background: #14b8a6; }
+        .info { background: #e0f2f1; padding: 18px; border-radius: 8px; margin: 20px auto; max-width: 960px; border-left: 5px solid #11998e; line-height: 1.6; }
+        code { background: rgba(0,0,0,0.05); padding: 2px 6px; border-radius: 3px; font-family: monospace; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📐 Minkowski Spacetime Simulator</h1>
+        <p>Textbook Verification: Hyperbolic Rotations and Lorentz Coordinate Axis Skewing</p>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label>Boost Velocity &beta; = v/c: <span id="betaDisplay">0.00</span></label>
+            <input type="range" id="betaSlider" min="0" max="0.85" step="0.05" value="0"
+                   oninput="updateBeta(this.value)">
+        </div>
+        <div class="button-group">
+            <button onclick="animateBoost()">▶ Animate Lorentz Boost</button>
+            <button onclick="resetBoost()" style="background-color: #666; margin-left: 10px;">🔄 Reset</button>
+        </div>
+    </div>
+
+    <canvas id="spacetimeCanvas" width="600" height="600"></canvas>
+
+    <div class="info">
+        <strong>Spacetime Lorentz Transformations (Sahoo Chapter 5):</strong><br>
+        • Notice how the boosted coordinates axis <code>x'</code> and time axis <code>ct'</code> **skew symmetrically** towards the light cone as <code>&beta;</code> increases.<br>
+        • The light cone is invariant (speed of light <code>c</code> is identical in all reference frames).<br>
+        • This coordinate axis rotation is a **hyperbolic rotation** in Minkowski space, contrasting with standard trigonometric rotations in Euclidean space.
+    </div>
+
+    <script>
+        const canvas = document.getElementById('spacetimeCanvas');
+        const ctx = canvas.getContext('2d');
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const scale = 110;  // pixels per unit
+
+        function drawSpacetimeDiagram(beta) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Grid lines (Lab Frame)
+            ctx.strokeStyle = '#f0f0f0';
+            ctx.lineWidth = 1;
+            for (let i = -4; i <= 4; i++) {
+                // Vertical grid lines
+                ctx.beginPath();
+                ctx.moveTo(centerX + i*scale, 0);
+                ctx.lineTo(centerX + i*scale, canvas.height);
+                ctx.stroke();
+
+                // Horizontal grid lines
+                ctx.beginPath();
+                ctx.moveTo(0, centerY + i*scale);
+                ctx.lineTo(canvas.width, centerY + i*scale);
+                ctx.stroke();
+            }
+
+            // Light cone (invariant space-time boundaries x = ±ct)
+            ctx.strokeStyle = '#e74c3c';
+            ctx.lineWidth = 2.5;
+            
+            // Light cone line 1: x = ct
+            ctx.beginPath();
+            ctx.moveTo(centerX - 2.5*scale, centerY + 2.5*scale);
+            ctx.lineTo(centerX + 2.5*scale, centerY - 2.5*scale);
+            ctx.stroke();
+
+            // Light cone line 2: x = -ct
+            ctx.beginPath();
+            ctx.moveTo(centerX + 2.5*scale, centerY + 2.5*scale);
+            ctx.lineTo(centerX - 2.5*scale, centerY - 2.5*scale);
+            ctx.stroke();
+
+            // Light cone shading
+            ctx.fillStyle = 'rgba(231, 76, 60, 0.05)';
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX + 2.5*scale, centerY - 2.5*scale);
+            ctx.lineTo(centerX - 2.5*scale, centerY - 2.5*scale);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX + 2.5*scale, centerY + 2.5*scale);
+            ctx.lineTo(centerX - 2.5*scale, centerY + 2.5*scale);
+            ctx.closePath();
+            ctx.fill();
+
+            // Lab frame axes (black)
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 2;
+            
+            // x-axis
+            ctx.beginPath();
+            ctx.moveTo(centerX - 2.5*scale, centerY);
+            ctx.lineTo(centerX + 2.5*scale, centerY);
+            ctx.stroke();
+            
+            // ct-axis
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY - 2.5*scale);
+            ctx.lineTo(centerX, centerY + 2.5*scale);
+            ctx.stroke();
+
+            // Boosted frame axes (blue)
+            if (beta > 0.01) {
+                const gamma = 1 / Math.sqrt(1 - beta**2);
+                ctx.strokeStyle = '#2980b9';
+                ctx.lineWidth = 2.5;
+
+                // Boosted x'-axis: slope = beta (ct' = beta * x')
+                ctx.beginPath();
+                ctx.moveTo(centerX - 2.3*scale, centerY + 2.3*beta*scale);
+                ctx.lineTo(centerX + 2.3*scale, centerY - 2.3*beta*scale);
+                ctx.stroke();
+
+                // Boosted ct'-axis: slope = 1/beta (x' = beta * ct')
+                ctx.beginPath();
+                ctx.moveTo(centerX - 2.3*beta*scale, centerY + 2.3*scale);
+                ctx.lineTo(centerX + 2.3*beta*scale, centerY - 2.3*scale);
+                ctx.stroke();
+
+                // Calibration ticks (invariant hyperbolas x^2 - ct^2 = ±1)
+                ctx.strokeStyle = '#9b59b6';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 3]);
+                
+                // Draw invariant hyperbola for space-like unit distance (x^2 - ct^2 = 1)
+                ctx.beginPath();
+                for (let t = -1.5; t <= 1.5; t += 0.05) {
+                    let x = Math.sqrt(1 + t**2);
+                    if (t === -1.5) ctx.moveTo(centerX + x*scale, centerY - t*scale);
+                    else ctx.lineTo(centerX + x*scale, centerY - t*scale);
+                }
+                ctx.stroke();
+
+                ctx.beginPath();
+                for (let t = -1.5; t <= 1.5; t += 0.05) {
+                    let x = -Math.sqrt(1 + t**2);
+                    if (t === -1.5) ctx.moveTo(centerX + x*scale, centerY - t*scale);
+                    else ctx.lineTo(centerX + x*scale, centerY - t*scale);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // Labels
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText('x (Space)', centerX + 2.5*scale - 20, centerY + 25);
+            ctx.fillText('ct (Time)', centerX - 70, centerY - 2.5*scale + 20);
+            
+            ctx.fillStyle = '#e74c3c';
+            ctx.font = '11px sans-serif';
+            ctx.fillText('Light Cone (β = c)', centerX + 1.2*scale, centerY - 1.2*scale - 10);
+
+            if (beta > 0.01) {
+                ctx.fillStyle = '#2980b9';
+                ctx.fillText("x'", centerX + 2.3*scale - 10, centerY - 2.3*beta*scale - 10);
+                ctx.fillText("ct'", centerX + 2.3*beta*scale + 10, centerY - 2.3*scale + 20);
+            }
+
+            // Metrics readout
+            ctx.fillStyle = '#666';
+            ctx.font = '12px monospace';
+            const gamma = 1 / Math.sqrt(Math.max(1 - beta**2, 0.001));
+            ctx.fillText(`Beam Parameter: β = ${beta.toFixed(2)}`, 20, 30);
+            ctx.fillText(`Lorentz Factor: γ = ${gamma.toFixed(2)}`, 20, 50);
+            if (beta > 0.01) {
+                ctx.fillText(`Coordinates rotation angle: θ = ${(Math.atan(beta)*180/Math.PI).toFixed(1)}°`, 20, 70);
+            }
+        }
+
+        function updateBeta(val) {
+            let beta = parseFloat(val);
+            document.getElementById('betaDisplay').textContent = beta.toFixed(2);
+            drawSpacetimeDiagram(beta);
+        }
+
+        let animationInterval = null;
+        function animateBoost() {
+            if (animationInterval) clearInterval(animationInterval);
+            let beta = 0;
+            animationInterval = setInterval(() => {
+                beta += 0.02;
+                if (beta >= 0.81) {
+                    clearInterval(animationInterval);
+                    beta = 0;
+                }
+                document.getElementById('betaSlider').value = beta;
+                updateBeta(beta);
+            }, 80);
+        }
+
+        function resetBoost() {
+            if (animationInterval) clearInterval(animationInterval);
+            document.getElementById('betaSlider').value = 0;
+            updateBeta(0);
+        }
+
+        updateBeta(0);
+    </script>
+</body>
+</html>

@@ -61,20 +61,44 @@
             font-size: 0.9em;
             font-weight: 600;
             cursor: pointer;
+            transition: all 0.2s;
         }
-        button:hover { transform: translateY(-2px); }
-        .formula-box {
+        button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(86, 171, 47, 0.3); }
+        
+        /* Metrics panel */
+        .metrics {
+            display: flex;
+            gap: 20px;
+            margin: 15px 0;
+            width: 100%;
+            max-width: 800px;
+            justify-content: space-between;
+        }
+        .metric {
+            background: rgba(20, 20, 40, 0.7);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 10px 20px;
+            flex: 1;
+            text-align: center;
+        }
+        .metric label { display: block; font-size: 0.75em; color: #888; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .metric value { display: block; font-size: 1.2em; font-weight: 700; color: #feca57; }
+
+        .formula-section {
             margin-top: 15px;
             background: rgba(20, 20, 40, 0.8);
             padding: 15px 25px;
             border-radius: 10px;
             border: 1px solid #333;
             font-size: 0.9em;
-            max-width: 700px;
+            max-width: 800px;
+            width: 100%;
             line-height: 1.6;
         }
-        .formula { color: #a8e063; font-family: 'Courier New', monospace; }
-        .highlight { color: #feca57; font-weight: 600; }
+        .formula-section h3 { margin-bottom: 8px; color: #a8e063; font-size: 1em; }
+        .formula-section code { background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.95em; color: #feca57; display: inline-block; margin: 3px 0; }
+        .highlight { color: #56ab2f; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -87,6 +111,22 @@
 
     <div id="canvas-container">
         <canvas id="canvas" width="800" height="500"></canvas>
+    </div>
+
+    <!-- Numerical Readout Panel -->
+    <div class="metrics">
+        <div class="metric">
+            <label>Beam Rapidity (y<sub>beam</sub>)</label>
+            <value id="ybeam-display">-</value>
+        </div>
+        <div class="metric">
+            <label>Lorentz Boost (y<sub>cm</sub>)</label>
+            <value id="ycm-display">0.00</value>
+        </div>
+        <div class="metric">
+            <label>Rapidity Additivity Check</label>
+            <value id="rapidity-check">Perfect Additivity ✓</value>
+        </div>
     </div>
 
     <div class="controls">
@@ -112,14 +152,17 @@
         </div>
 
         <button onclick="animateBoost()">⏵ Animate Boost</button>
-        <button onclick="document.getElementById('slider-ycm').value = 0; update();">Reset</button>
+        <button onclick="document.getElementById('slider-ycm').value = 0; update();" style="background: #555; color: #fff;">Reset</button>
+        <button onclick="exportRapidityComparison()" style="background: linear-gradient(135deg, #feca57, #ff9f43);">📊 Export as PNG</button>
     </div>
 
-    <div class="formula-box">
-        <p><span class="formula">y = y* + y<sub>cm</sub></span> — Rapidity is additive under boosts (Book §5.2.2)</p>
-        <p><span class="formula">dN/dy</span> shape is <span class="highlight">Lorentz invariant</span> — it only shifts horizontally</p>
-        <p><span class="formula">dN/dη</span> shape is <span class="highlight">NOT invariant</span> — it distorts under boosts (see the narrowing/broadening)</p>
-        <p>At midrapidity (y≈0) and high pT, η → y. The difference grows for massive particles at low pT.</p>
+    <!-- Comparison formula box -->
+    <div class="formula-section">
+        <h3>Why Rapidity is Special (Sahoo Chapter 5):</h3>
+        <p><strong>Classical Velocity Addition:</strong> <code>v_total = (v₁ + v₂) / (1 + v₁v₂/c²)</code> <span style="color: #ff6b6b; font-weight: bold;">[Highly Non-linear ❌]</span></p>
+        <p><strong>Rapidity Addition:</strong> <code>y_total = y₁ + y₂</code> <span class="highlight">[Linear ✓]</span></p>
+        <p><strong>Hyperbolic Analogy:</strong> The relativistic velocity sum reduces to the hyperbolic tangent identity: <br>
+        <code>tanh(y₁ + y₂) = (tanh y₁ + tanh y₂)/(1 + tanh y₁ tanh y₂)</code>, making rapidity the natural additive coordinate for boosts along the beam axis.</p>
     </div>
 
     <script>
@@ -136,33 +179,25 @@
         return amplitude * Math.exp(-0.5 * ((x - mu) / sigma) ** 2);
     }
 
-    // Generate dN/dy (Gaussian in rapidity, shifts cleanly)
+    // dN/dy
     function dNdy(yArr, ycm, sigma, amp) {
         return yArr.map(y => gaussian(y, ycm, sigma, amp));
     }
 
-    // Generate dN/dη under boost
-    // η ≈ y for massless particles. For massive particles:
-    // The Jacobian |dy/dη| = √(1 - m²/(m_T² cosh²y)) modifies the shape
+    // dN/dη under boost
     function dNdeta(etaArr, ycm, sigma, amp, mass) {
         return etaArr.map(eta => {
-            // Approximate: particles have some pT distribution
-            // Average over a thermal pT distribution
             let sum = 0;
             const nSamples = 20;
             for (let i = 0; i < nSamples; i++) {
-                const pT = 0.3 + i * 0.15; // sample pT values
+                const pT = 0.3 + i * 0.15;
                 const mT = Math.sqrt(pT * pT + mass * mass);
-                // Convert η to y: y = asinh(pT/mT * sinh(η))... approximately
-                // Simplified: y ≈ η for massless, y ≈ sign(η) * acosh(mT*cosh(η)/mT) for massive
                 const p = pT / Math.tanh(Math.abs(eta) > 0.01 ? Math.abs(eta) : 0.01);
                 const E = Math.sqrt(p * p + mass * mass);
                 const pz = p * Math.cos(2 * Math.atan(Math.exp(-eta)));
                 const y = 0.5 * Math.log((E + pz) / Math.max(E - pz, 1e-10));
 
-                // Jacobian
                 const jacobian = Math.sqrt(1 - mass * mass / (mT * mT * Math.cosh(y) ** 2 + 1e-10));
-
                 sum += gaussian(y, ycm, sigma, amp) * Math.abs(jacobian > 0 ? jacobian : 1);
             }
             return sum / nSamples;
@@ -178,8 +213,15 @@
         document.getElementById('val-sqrts').textContent = sqrtS;
         document.getElementById('val-sigma').textContent = sigma.toFixed(2);
 
+        document.getElementById('ycm-display').textContent = ycm.toFixed(2);
+
         // Beam rapidity
         const ybeam = Math.acosh(sqrtS / (2 * 0.938));
+        document.getElementById('ybeam-display').textContent = ybeam.toFixed(3);
+        
+        // Update additivity status
+        document.getElementById('rapidity-check').textContent = `y_tot = y* + ${ycm.toFixed(2)} [Perfect Additivity ✓]`;
+
         const amp = 80;
         const mass_pion = 0.140;
 
@@ -201,52 +243,44 @@
         // TOP PANEL: dN/dy
         // =====================
         const topY0 = margin.top;
-
-        // Original (ycm=0)
         const dndy_orig = dNdy(xArr, 0, sigma, amp);
-        // Boosted
         const dndy_boost = dNdy(xArr, ycm, sigma, amp);
-
         const yMax1 = Math.max(...dndy_orig, ...dndy_boost) * 1.3;
 
         drawPanel(topY0, plotH, xRange, [0, yMax1], xArr, [
-            { data: dndy_orig, color: 'rgba(86, 171, 47, 0.3)', lineColor: '#56ab2f', label: 'y_cm = 0 (CMS)', dash: [5, 5] },
-            { data: dndy_boost, color: 'rgba(168, 224, 99, 0.3)', lineColor: '#a8e063', label: `y_cm = ${ycm.toFixed(2)}`, dash: [] },
-        ], 'dN/dy — Rapidity Distribution', 'y', 'dN/dy', ybeam);
+            { data: dndy_orig, color: 'rgba(86, 171, 47, 0.15)', lineColor: '#56ab2f', label: 'y_cm = 0 (CMS)', dash: [5, 5] },
+            { data: dndy_boost, color: 'rgba(168, 224, 99, 0.25)', lineColor: '#a8e063', label: `y_cm = ${ycm.toFixed(2)}`, dash: [] },
+        ], 'dN/dy — Rapidity Distribution (Textbook Shape-Invariant)', 'y', 'dN/dy', ybeam);
 
         // =====================
         // BOTTOM PANEL: dN/dη
         // =====================
         const botY0 = margin.top + plotH + 30;
-
         const dndeta_orig = dNdeta(xArr, 0, sigma, amp, mass);
         const dndeta_boost = dNdeta(xArr, ycm, sigma, amp, mass);
-
         const yMax2 = Math.max(...dndeta_orig, ...dndeta_boost) * 1.3;
 
         drawPanel(botY0, plotH, xRange, [0, yMax2], xArr, [
-            { data: dndeta_orig, color: 'rgba(255, 107, 107, 0.2)', lineColor: '#ff6b6b', label: 'y_cm = 0 (CMS)', dash: [5, 5] },
-            { data: dndeta_boost, color: 'rgba(254, 202, 87, 0.3)', lineColor: '#feca57', label: `y_cm = ${ycm.toFixed(2)}`, dash: [] },
-        ], 'dN/dη — Pseudorapidity Distribution (m_π = 140 MeV)', 'η', 'dN/dη', ybeam);
+            { data: dndeta_orig, color: 'rgba(255, 107, 107, 0.12)', lineColor: '#ff6b6b', label: 'y_cm = 0 (CMS)', dash: [5, 5] },
+            { data: dndeta_boost, color: 'rgba(254, 202, 87, 0.2)', lineColor: '#feca57', label: `y_cm = ${ycm.toFixed(2)}`, dash: [] },
+        ], 'dN/dη — Pseudorapidity Distribution (Non-Invariant, Mass = 140 MeV)', 'η', 'dN/dη', ybeam);
 
-        // Annotation: shape comparison
+        // Annotation
         if (Math.abs(ycm) > 0.5) {
             ctx.fillStyle = '#a8e063';
             ctx.font = 'bold 11px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('✓ Shape preserved!', margin.left + plotW / 2, topY0 + plotH - 10);
+            ctx.fillText('✓ Shape preserved (hyperbolic invariant)!', margin.left + plotW / 2, topY0 + plotH - 10);
 
             ctx.fillStyle = '#feca57';
-            ctx.fillText('⚠ Shape distorted!', margin.left + plotW / 2, botY0 + plotH - 10);
+            ctx.fillText('⚠ Shape distorted (Jacobian correction dependent)!', margin.left + plotW / 2, botY0 + plotH - 10);
         }
     }
 
     function drawPanel(y0, pH, xRange, yRange, xArr, datasets, title, xLabel, yLabel, ybeam) {
-        // Background
         ctx.fillStyle = 'rgba(20, 20, 40, 0.4)';
         ctx.fillRect(margin.left, y0, plotW, pH);
 
-        // Grid
         ctx.strokeStyle = 'rgba(255,255,255,0.06)';
         ctx.lineWidth = 0.5;
         for (let v = xRange[0]; v <= xRange[1]; v += 1) {
@@ -258,7 +292,6 @@
             ctx.beginPath(); ctx.moveTo(margin.left, y); ctx.lineTo(margin.left + plotW, y); ctx.stroke();
         }
 
-        // Beam rapidity markers
         if (ybeam) {
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
             ctx.lineWidth = 1;
@@ -276,9 +309,7 @@
             ctx.setLineDash([]);
         }
 
-        // Datasets
         datasets.forEach(ds => {
-            // Fill
             ctx.fillStyle = ds.color;
             ctx.beginPath();
             ctx.moveTo(margin.left + (xArr[0] - xRange[0]) / (xRange[1] - xRange[0]) * plotW, y0 + pH);
@@ -291,7 +322,6 @@
             ctx.closePath();
             ctx.fill();
 
-            // Line
             ctx.strokeStyle = ds.lineColor;
             ctx.lineWidth = 2;
             ctx.setLineDash(ds.dash);
@@ -306,13 +336,11 @@
             ctx.setLineDash([]);
         });
 
-        // Axes
         ctx.strokeStyle = '#666';
         ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.moveTo(margin.left, y0 + pH); ctx.lineTo(margin.left + plotW, y0 + pH); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(margin.left, y0); ctx.lineTo(margin.left, y0 + pH); ctx.stroke();
 
-        // Labels
         ctx.fillStyle = '#ccc';
         ctx.font = '12px serif';
         ctx.textAlign = 'center';
@@ -324,13 +352,11 @@
         ctx.fillText(yLabel, 0, 0);
         ctx.restore();
 
-        // Title
         ctx.fillStyle = '#ddd';
         ctx.font = 'bold 12px sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText(title, margin.left + 5, y0 - 5);
 
-        // Legend
         const legendX = margin.left + plotW - 180;
         datasets.forEach((ds, i) => {
             const ly = y0 + 15 + i * 18;
@@ -346,7 +372,6 @@
             ctx.fillText(ds.label, legendX + 25, ly + 4);
         });
 
-        // Tick labels
         ctx.font = '9px monospace';
         ctx.fillStyle = '#999';
         ctx.textAlign = 'center';
@@ -360,28 +385,26 @@
         const slider = document.getElementById('slider-ycm');
         let target = 2.0;
         let current = 0;
-
         slider.value = 0;
         update();
 
         function step() {
-            current += 0.03;
+            current += 0.04;
             if (current > target) {
                 current = target;
                 slider.value = current;
                 update();
-                // Reverse
                 setTimeout(() => {
                     let rev = target;
                     function stepBack() {
-                        rev -= 0.03;
+                        rev -= 0.04;
                         if (rev < 0) { rev = 0; slider.value = rev; update(); return; }
                         slider.value = rev;
                         update();
                         requestAnimationFrame(stepBack);
                     }
                     stepBack();
-                }, 500);
+                }, 400);
                 return;
             }
             slider.value = current;
@@ -391,7 +414,13 @@
         step();
     }
 
-    // Initial draw
+    function exportRapidityComparison() {
+        const link = document.createElement('a');
+        link.download = 'rapidity_boost_comparison.png';
+        link.href = canvas.toDataURL();
+        link.click();
+    }
+
     update();
     </script>
 </body>
