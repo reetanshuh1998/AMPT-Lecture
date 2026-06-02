@@ -236,7 +236,7 @@ def analyze_speed_of_sound():
     """Generates Plot 4: Extracted speed of sound cs^2 vs beam energy."""
     print("Generating Plot 4: Speed of sound comparison...")
     setup_style()
-    fig, ax = plt.subplots(figsize=(9, 6.5))
+    fig, ax = plt.subplots(figsize=(11.5, 6.5))
 
     # Calculate actual pion rapidity widths from 7.7 and 39 GeV data
     ampt_widths = {}
@@ -306,7 +306,7 @@ def analyze_speed_of_sound():
     ax.set_xscale('log')
     ax.xaxis.set_major_formatter(matplotlib.ticker.ScalarFormatter())
     ax.set_xticks([2, 5, 10, 30, 100, 400, 1000, 5000, 20000])
-    ax.legend(frameon=True, fontsize=11, loc='upper left')
+    ax.legend(frameon=True, fontsize=11, loc='upper left', bbox_to_anchor=(1.02, 1.0))
     ax.grid(True, which='both', linestyle=':', alpha=0.5)
 
     # Text annotation about the softest point

@@ -351,28 +351,28 @@
     \end{columns}
 \end{frame}
 
-% Slide 15: Speed of Sound & Phase Transition (Book points and motivation)
+% Slide 15: Speed of Sound Plot (Equation of State)
 \begin{frame}{Equation of State: Extracted Speed of Sound}
-    \begin{columns}
-        \begin{column}{0.48\textwidth}
-            \begin{center}
-                \includegraphics[height=0.58\textheight]{day2/day2_speed_of_sound.png}
-            \end{center}
-        \end{column}
-        \begin{column}{0.52\textwidth}
-            \footnotesize
-            \begin{block}{Speed of Sound $c_s^2 = \partial P / \partial \epsilon$ (Sahoo Fig. 5.16)}
-                \begin{itemize}
-                    \item In Relativistic Hydrodynamics, $c_s^2$ characterizes the stiffness of the early medium.
-                    \item We extract $c_s^2$ from the pion rapidity width $\sigma_y$ by inverting the Landau equation:
-                      {\scriptsize $c_s^2 = \frac{-4\ln(\sqrt{s_{NN}}/2m_p)}{3\sigma_y^2} + \sqrt{\left(\frac{4\ln(\sqrt{s_{NN}}/2m_p)}{3\sigma_y^2}\right)^2 + 1}$}
-                    \item **The "Softest Point":** Experimental data shows a clear minimum ($c_s^2 \approx 0.15$) at $E_{\mathrm{beam}} \approx 30$ AGeV ($\sqrt{s_{NN}} \approx 7.7$ GeV).
-                    \item **Interpretation:** This minimum is a classic signature of the transition from hadronic matter to QGP (mixed phase or onset of deconfinement).
-                    \item **AMPT Default:** Remains stiff ($c_s^2 \approx 0.32$), showing the lack of a physical first-order phase transition in default ZPC/ART.
-                \end{itemize}
-            \end{block}
-        \end{column}
-    \end{columns}
+    \begin{center}
+        \includegraphics[height=0.75\textheight]{day2/day2_speed_of_sound.png}
+    \end{center}
+\end{frame}
+
+% Slide 16: Speed of Sound & EoS Softening Discussion
+\begin{frame}{Equation of State: Speed of Sound \& EoS Softening}
+    \begin{block}{Speed of Sound $c_s^2 = \partial P / \partial \epsilon$ (Sahoo Fig. 5.16)}
+        \small
+        In Relativistic Hydrodynamics, $c_s^2$ characterizes the stiffness of the early medium. We extract $c_s^2$ from the pion rapidity width $\sigma_y$ by inverting the Landau equation:
+        \[ c_s^2 = \frac{-4\ln(\sqrt{s_{NN}}/2m_p)}{3\sigma_y^2} + \sqrt{\left(\frac{4\ln(\sqrt{s_{NN}}/2m_p)}{3\sigma_y^2}\right)^2 + 1} \]
+    \end{block}
+    \begin{block}{Physical Interpretation \& Motivation}
+        \footnotesize
+        \begin{itemize}
+            \item **The "Softest Point":** Experimental data shows a clear minimum ($c_s^2 \approx 0.15$) at $E_{\mathrm{beam}} \approx 30$ AGeV ($\sqrt{s_{NN}} \approx 7.7$ GeV).
+            \item **Transition Signature:** This minimum is a classic signature of the transition from hadronic matter to QGP (mixed phase or onset of deconfinement).
+            \item **AMPT Default:** Remains stiff ($c_s^2 \approx 0.32$), showing the lack of a physical first-order phase transition in default ZPC/ART.
+        \end{itemize}
+    \end{block}
 \end{frame}
 
 \section{Hands-On}
