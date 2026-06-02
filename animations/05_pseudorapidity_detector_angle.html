@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polar Angle vs. Pseudorapidity Detector Mapper</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0b0f19;
+            color: #f8fafc;
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 1300px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            margin-top: 20px;
+        }
+        @media (min-width: 950px) {
+            .container {
+                grid-template-columns: 0.85fr 1.15fr;
+            }
+        }
+        .panel {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+        }
+        .header-panel {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(6, 182, 212, 0.15) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            text-align: left;
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 12px;
+        }
+        .header-panel h1 {
+            font-size: 26px;
+            font-weight: 700;
+            background: linear-gradient(to right, #cbd5e1, #818cf8, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        .header-panel p {
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+        @media (min-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .visual-card {
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        .visual-card h3 {
+            font-size: 15px;
+            color: #a5b4fc;
+            margin-bottom: 12px;
+            align-self: flex-start;
+            font-weight: 600;
+            border-left: 3px solid #22d3ee;
+            padding-left: 8px;
+        }
+        canvas {
+            background: #090d16;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            max-width: 100%;
+            height: auto;
+        }
+        .control-group {
+            margin-bottom: 20px;
+        }
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #cbd5e1;
+        }
+        .control-label span.value {
+            font-family: 'JetBrains Mono', monospace;
+            color: #22d3ee;
+            font-weight: 700;
+            font-size: 16px;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #1e293b;
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #22d3ee;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+            transition: transform 0.1s, background-color 0.1s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+            background: #818cf8;
+        }
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        button.preset-btn {
+            background: rgba(255, 255, 255, 0.05);
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 8px 4px;
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        button.preset-btn:hover {
+            background: rgba(34, 211, 238, 0.15);
+            color: #22d3ee;
+            border-color: #22d3ee;
+            transform: translateY(-1px);
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+        .metric-card h4 {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+        }
+        .metric-card p {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 15px;
+            font-weight: 700;
+            color: #22d3ee;
+        }
+        .metric-card.classification {
+            grid-column: span 2;
+        }
+        .metric-card.classification p {
+            color: #10b981;
+            font-size: 14px;
+        }
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button.action-btn {
+            flex: 1;
+            min-width: 110px;
+            padding: 10px 18px;
+            border-radius: 10px;
+            border: none;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+            transform: translateY(-1px);
+        }
+        .btn-pause {
+            background: #d97706;
+            color: white;
+            box-shadow: 0 4px 14px rgba(217, 119, 6, 0.3);
+        }
+        .btn-pause:hover:not(:disabled) {
+            background: #f59e0b;
+            transform: translateY(-1px);
+        }
+        .btn-pause:disabled {
+            background: #334155;
+            color: #64748b;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        .btn-reset {
+            background: #475569;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-reset:hover {
+            background: #64748b;
+            transform: translateY(-1px);
+        }
+        .status-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 16px 0 8px 0;
+            font-size: 13px;
+            color: #94a3b8;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #475569;
+            transition: all 0.3s ease;
+        }
+        .status-dot.active {
+            background-color: #10b981;
+            box-shadow: 0 0 10px #10b981;
+            animation: sweep-pulse 1.5s infinite;
+        }
+        .status-dot.paused {
+            background-color: #f59e0b;
+            box-shadow: 0 0 10px #f59e0b;
+        }
+        @keyframes sweep-pulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+        .info-panel {
+            margin-top: 20px;
+            border-left: 4px solid #22d3ee;
+            background: rgba(34, 211, 238, 0.05);
+            padding: 16px;
+            border-radius: 0 12px 12px 0;
+        }
+        .info-panel h3 {
+            font-size: 15px;
+            color: #22d3ee;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .info-panel ul {
+            list-style-type: none;
+            font-size: 13px;
+            color: #cbd5e1;
+            line-height: 1.6;
+        }
+        .info-panel li {
+            margin-bottom: 8px;
+            position: relative;
+            padding-left: 18px;
+        }
+        .info-panel li::before {
+            content: "•";
+            color: #22d3ee;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            font-size: 18px;
+            top: -2px;
+        }
+        .code-highlight {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.06);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #22d3ee;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="panel">
+            <div class="header-panel">
+                <h1>📐 Polar Angle vs. Pseudorapidity</h1>
+                <p>Interactive Detector Mapping: Visualize how standard geometric polar angles $\theta$ in a cylindrical particle tracker map directly to the logarithmic pseudorapidity scale ($\eta = -\ln\tan(\theta/2)$).</p>
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <label for="angleSlider">Polar Angle (&theta;)</label>
+                    <span class="value" id="angleDisplay">90&deg;</span>
+                </div>
+                <input type="range" id="angleSlider" min="1" max="179" step="1" value="90"
+                       oninput="manualUpdateAngle(this.value)">
+                
+                <div class="preset-grid">
+                    <button class="preset-btn" onclick="setPresetAngle(10)">10&deg; (Fwd)</button>
+                    <button class="preset-btn" onclick="setPresetAngle(45)">45&deg; (Diag)</button>
+                    <button class="preset-btn" onclick="setPresetAngle(90)">90&deg; (Mid)</button>
+                    <button class="preset-btn" onclick="setPresetAngle(135)">135&deg; (Diag)</button>
+                    <button class="preset-btn" onclick="setPresetAngle(170)">170&deg; (Bwd)</button>
+                </div>
+            </div>
+
+            <!-- Animation Playback Controls -->
+            <div class="button-group">
+                <button id="btn-animate" class="action-btn btn-primary" onclick="toggleAnimation()"><span>▶</span> Play Auto-Sweep</button>
+                <button id="btn-pause" class="action-btn btn-pause" onclick="togglePause()" disabled><span>⏸</span> Pause</button>
+                <button class="action-btn btn-reset" onclick="resetExplorer()"><span>🔄</span> Reset</button>
+            </div>
+
+            <div class="control-group" style="margin-top: 15px;">
+                <label for="speedSelect" class="control-label" style="margin-bottom: 8px;">Sweep Speed</label>
+                <select id="speedSelect" onchange="updateSpeed(this.value)" style="width: 100%; padding: 10px 14px; background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #f8fafc; font-family: 'Outfit', sans-serif; font-size: 13px; outline: none; cursor: pointer; transition: border-color 0.2s;">
+                    <option value="0.25">0.25x Speed (Very Slow)</option>
+                    <option value="0.5">0.5x Speed (Slow Sweep)</option>
+                    <option value="1" selected>1.0x Speed (Normal Sweep)</option>
+                    <option value="2">2.0x Speed (Fast Sweep)</option>
+                    <option value="4">4.0x Speed (Rapid Sweep)</option>
+                </select>
+            </div>
+
+            <div class="status-container">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">SWEEP IDLE</span>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h4>Half-Angle (&theta;/2)</h4>
+                    <p id="metric-half">45.0&deg;</p>
+                </div>
+                <div class="metric-card">
+                    <h4>tan(&theta;/2)</h4>
+                    <p id="metric-tan">1.000</p>
+                </div>
+                <div class="metric-card classification">
+                    <h4>Pseudorapidity (&eta;) & Detector Region</h4>
+                    <p id="metric-eta">&eta; = 0.00 (Central Barrel)</p>
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <h3>Mathematical Trick (&eta; definition):</h3>
+                <ul>
+                    <li><strong>Transverse Barrel</strong>: At $\theta = 90^\circ$, particles shoot straight out. $\tan(45^\circ) = 1.0 \Rightarrow \eta = -\ln(1.0) = 0.0$.</li>
+                    <li><strong>Logarithmic Expansion</strong>: As $\theta \to 0^\circ$ (forward beam), $\tan(\theta/2) \to 0 \Rightarrow \eta \to +\infty$.</li>
+                    <li><strong>Backward Symmetry</strong>: As $\theta \to 180^\circ$ (backward beam), $\tan(\theta/2) \to \infty \Rightarrow \eta \to -\infty$.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="visual-card">
+                <h3>⚛ Concentric Detector Tracking Compass</h3>
+                <canvas id="detectorCanvas" width="500" height="380"></canvas>
+            </div>
+
+            <div class="visual-card">
+                <h3>📈 Mapping Curve (&eta; vs. &theta;)</h3>
+                <div id="mappingPlot" style="width: 100%; height: 260px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('detectorCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let currentAngle = 90; // degrees
+        let isAnimating = false;
+        let isPaused = false;
+        let animationInterval = null;
+        let sweepDirection = 1; // 1 for increasing, -1 for decreasing
+        let animationSpeed = 1.0; // speed multiplier
+
+        function updateAngle(val) {
+            currentAngle = parseInt(val);
+            document.getElementById('angleDisplay').innerHTML = currentAngle + '&deg;';
+            document.getElementById('angleSlider').value = val;
+            updateSimulation();
+        }
+
+        function manualUpdateAngle(val) {
+            stopAnimation();
+            updateAngle(val);
+        }
+
+        function setPresetAngle(angle) {
+            stopAnimation();
+            updateAngle(angle);
+        }
+
+        function toggleAnimation() {
+            if (isAnimating) {
+                stopAnimation();
+            } else {
+                startAnimation();
+            }
+        }
+
+        function startAnimation() {
+            isAnimating = true;
+            isPaused = false;
+            updateStatus('running');
+            document.getElementById('btn-animate').innerHTML = `<span>⏹</span> Stop Sweep`;
+            document.getElementById('btn-animate').style.background = "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
+            document.getElementById('btn-pause').disabled = false;
+            document.getElementById('btn-pause').innerHTML = `<span>⏸</span> Pause`;
+            document.getElementById('btn-pause').style.background = "#d97706";
+
+            if (animationInterval) clearInterval(animationInterval);
+            
+            animationInterval = setInterval(() => {
+                if (isPaused) return;
+
+                // Step size scales with speed. Standard step size is 1 degree per tick.
+                let step = 1.0 * animationSpeed;
+                currentAngle += step * sweepDirection;
+
+                if (currentAngle >= 175) {
+                    currentAngle = 175;
+                    sweepDirection = -1; // bounce back
+                } else if (currentAngle <= 5) {
+                    currentAngle = 5;
+                    sweepDirection = 1; // bounce forward
+                }
+
+                updateAngle(currentAngle);
+            }, 30);
+        }
+
+        function stopAnimation() {
+            isAnimating = false;
+            isPaused = false;
+            updateStatus('idle');
+            if (animationInterval) clearInterval(animationInterval);
+            document.getElementById('btn-animate').innerHTML = `<span>▶</span> Play Auto-Sweep`;
+            document.getElementById('btn-animate').style.background = "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)";
+            document.getElementById('btn-pause').disabled = true;
+            document.getElementById('btn-pause').innerHTML = `<span>⏸</span> Pause`;
+            document.getElementById('btn-pause').style.background = "#334155";
+        }
+
+        function togglePause() {
+            if (!isAnimating) return;
+            isPaused = !isPaused;
+            if (isPaused) {
+                updateStatus('paused');
+                document.getElementById('btn-pause').innerHTML = `<span>▶</span> Resume`;
+                document.getElementById('btn-pause').style.background = "#16a34a";
+            } else {
+                updateStatus('running');
+                document.getElementById('btn-pause').innerHTML = `<span>⏸</span> Pause`;
+                document.getElementById('btn-pause').style.background = "#d97706";
+            }
+        }
+
+        function updateSpeed(val) {
+            animationSpeed = parseFloat(val);
+        }
+
+        function updateStatus(state) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            if (!dot || !text) return;
+            dot.className = 'status-dot';
+            if (state === 'running') {
+                dot.classList.add('active');
+                text.textContent = 'SWEEP ACTIVE';
+            } else if (state === 'paused') {
+                dot.classList.add('paused');
+                text.textContent = 'SWEEP PAUSED';
+            } else {
+                text.textContent = 'SWEEP IDLE';
+            }
+        }
+
+        function resetExplorer() {
+            stopAnimation();
+            updateAngle(90);
+        }
+
+        function calculateEta(thetaDeg) {
+            const rad = (thetaDeg * Math.PI) / 180;
+            const halfRad = rad / 2.0;
+            const tangent = Math.tan(halfRad);
+            const eta = -Math.log(tangent);
+            return { halfRad, tangent, eta };
+        }
+
+        function getRegion(eta) {
+            const absEta = Math.abs(eta);
+            if (absEta < 0.5) return "Central Barrel Region";
+            if (absEta < 1.0) return "Outer Barrel / Endcap Transition";
+            if (absEta < 2.5) return "Endcap Region (Forward/Backward)";
+            return "Extreme Forward / Beam Pipe Boundary";
+        }
+
+        function drawDetector() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#090d16';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const cX = canvas.width / 2;
+            const cY = canvas.height / 2;
+            const R_outer = 135;
+
+            // Concentric detector layer rings
+            const layers = [
+                { r: 40, border: 'rgba(56, 189, 248, 0.1)', name: 'Silicon Vertex' },
+                { r: 80, border: 'rgba(99, 102, 241, 0.08)', name: 'Time Projection Chamber' },
+                { r: 110, border: 'rgba(236, 72, 153, 0.06)', name: 'EM Calorimeter' },
+                { r: 135, border: 'rgba(245, 158, 11, 0.05)', name: 'Hadronic Calorimeter' }
+            ];
+
+            layers.forEach(layer => {
+                ctx.strokeStyle = layer.border;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(cX, cY, layer.r, 0, 2*Math.PI);
+                ctx.stroke();
+            });
+
+            // Beam Axis line
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(20, cY);
+            ctx.lineTo(canvas.width - 20, cY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.font = '9px JetBrains Mono, monospace';
+            ctx.fillText('BEAM LINE (z)', canvas.width - 95, cY - 8);
+
+            // Outer Eta compass ticks
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(cX, cY, R_outer + 8, 0, 2*Math.PI);
+            ctx.stroke();
+
+            // Label key eta angles along the boundary
+            // theta mapping to screen: Screen angles run clockwise starting horizontal right as 0.
+            // But physics polar angle theta runs counterclockwise starting horizontal right as 0.
+            // So screen angle = -theta.
+            const compassAngles = [5, 10, 20, 30, 45, 60, 90, 120, 135, 150, 160, 170, 175];
+            compassAngles.forEach(theta => {
+                const rad = (theta * Math.PI) / 180;
+                const { eta } = calculateEta(theta);
+
+                const labelX = cX + Math.cos(-rad) * (R_outer + 18);
+                const labelY = cY + Math.sin(-rad) * (R_outer + 18);
+
+                ctx.fillStyle = theta === 90 ? '#22d3ee' : 'rgba(255,255,255,0.4)';
+                ctx.font = '8px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(`η=${eta.toFixed(1)}`, labelX, labelY + 3);
+
+                // Draw tiny tick mark
+                const tickInnerX = cX + Math.cos(-rad) * (R_outer + 5);
+                const tickInnerY = cY + Math.sin(-rad) * (R_outer + 5);
+                const tickOuterX = cX + Math.cos(-rad) * (R_outer + 10);
+                const tickOuterY = cY + Math.sin(-rad) * (R_outer + 10);
+                ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                ctx.beginPath();
+                ctx.moveTo(tickInnerX, tickInnerY);
+                ctx.lineTo(tickOuterX, tickOuterY);
+                ctx.stroke();
+            });
+
+            // Sweeping track vector
+            const activeRad = (currentAngle * Math.PI) / 180;
+            const trackX = cX + Math.cos(-activeRad) * R_outer;
+            const trackY = cY + Math.sin(-activeRad) * R_outer;
+
+            // Draw glowing track vector line
+            ctx.strokeStyle = '#22d3ee';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(cX, cY);
+            ctx.lineTo(trackX, trackY);
+            ctx.stroke();
+
+            // Track glow
+            ctx.strokeStyle = 'rgba(34, 211, 238, 0.25)';
+            ctx.lineWidth = 7;
+            ctx.beginPath(); ctx.moveTo(cX, cY); ctx.lineTo(trackX, trackY); ctx.stroke();
+
+            // Target collision point
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(cX, cY, 4, 0, 2*Math.PI);
+            ctx.fill();
+
+            // Angle arc display
+            ctx.strokeStyle = '#fbbf24';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(cX, cY, 30, 0, -activeRad, true); // draw polar arc
+            ctx.stroke();
+
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = '10px Outfit, sans-serif';
+            const textAngleRad = -activeRad / 2.0;
+            ctx.fillText(`θ = ${currentAngle}°`, cX + Math.cos(textAngleRad) * 45 - 15, cY + Math.sin(textAngleRad) * 45 + 3);
+        }
+
+        function updatePlots() {
+            const { halfRad, tangent, eta } = calculateEta(currentAngle);
+
+            // Generate theta sweep from 5 to 175 degrees
+            const thetas = [];
+            const etas = [];
+            for (let t = 4; t <= 176; t += 2) {
+                thetas.push(t);
+                let rad = (t * Math.PI) / 180;
+                etas.push(-Math.log(Math.tan(rad / 2.0)));
+            }
+
+            let traceCurve = {
+                x: thetas,
+                y: etas,
+                mode: 'lines',
+                name: 'η Mapping Curve',
+                line: {color: '#818cf8', width: 3},
+                fill: 'tozeroy',
+                fillcolor: 'rgba(129, 140, 248, 0.05)'
+            };
+
+            let traceDot = {
+                x: [currentAngle],
+                y: [eta],
+                mode: 'markers',
+                name: 'Current Angle',
+                marker: {size: 11, color: '#22d3ee', symbol: 'diamond', line: {color: '#ffffff', width: 1.5}}
+            };
+
+            const plotLayout = {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                template: 'plotly_dark',
+                margin: { t: 15, b: 35, l: 45, r: 15 },
+                xaxis: { 
+                    title: { text: 'Polar Angle θ (degrees)', font: { family: 'Outfit', size: 11 } },
+                    gridcolor: '#1e293b',
+                    linecolor: '#334155',
+                    range: [0, 180]
+                },
+                yaxis: { 
+                    title: { text: 'Pseudorapidity η', font: { family: 'Outfit', size: 11 } },
+                    gridcolor: '#1e293b',
+                    linecolor: '#334155',
+                    range: [-4, 4]
+                },
+                showlegend: false,
+                hovermode: 'closest'
+            };
+
+            Plotly.newPlot('mappingPlot', [traceCurve, traceDot], plotLayout, {responsive: true, displayModeBar: false});
+        }
+
+        function updateSimulation() {
+            const { halfRad, tangent, eta } = calculateEta(currentAngle);
+
+            // Update Metrics Cards
+            document.getElementById('metric-half').textContent = (currentAngle / 2.0).toFixed(1) + '°';
+            document.getElementById('metric-tan').textContent = tangent.toFixed(3);
+            
+            const regionStr = getRegion(eta);
+            document.getElementById('metric-eta').innerHTML = `η = ${eta.toFixed(2)} <span style="font-size:10px; color:#cbd5e1; display:block;">(${regionStr})</span>`;
+
+            drawDetector();
+            updatePlots();
+        }
+
+        // Initial setup
+        updateAngle(90);
+        updateStatus('idle');
+    </script>
+</body>
+</html>

@@ -592,10 +592,23 @@
         Which highlights the hyperbolic boost rotation of coordinates:
         \[ E = m_T \cosh y, \quad p_z = m_T \sinh y \]
     \end{block}
+    \begin{block}{Physical Intuition: Spacetime Hyperbolas}
+        In Minkowski space, constant transverse mass curves are hyperbolas ($E^2 - p_z^2 = m_T^2$). Rapidity acts as the hyperbolic angle that rotates coordinates under longitudinal Lorentz boosts, preserving the shape of rapidity yields.
+    \end{block}
+\end{frame}
+
+% Slide 27: From Rapidity to Pseudorapidity
+\begin{frame}{From Rapidity to Pseudorapidity}
     \begin{block}{Pseudorapidity $\eta$ (Sahoo Eq. 5.48)}
         For highly relativistic particles ($E \gg m_0 \Rightarrow m_T \approx p_T$), standard rapidity simplifies to a purely geometric quantity called **Pseudorapidity** ($\eta$), which depends only on polar angle $\theta$:
         \[ \eta = \tanh^{-1}\left( \frac{p_z}{p} \right) = -\ln \tan \left( \frac{\theta}{2} \right) \]
     \end{block}
+    \begin{alertblock}{Interactive Physics Simulator}
+        Open in your browser:
+        \begin{itemize}
+            \item \texttt{animations/05\_pseudorapidity\_detector\_angle.html} \quad {\tiny (Interactive polar angle $\theta$ vs. pseudorapidity $\eta$ detector mapping)}
+        \end{itemize}
+    \end{alertblock}
 \end{frame}
 
 \section{Hands-On}

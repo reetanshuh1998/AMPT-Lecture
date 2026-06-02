@@ -44,7 +44,17 @@ This directory contains **8 interactive HTML5/JavaScript simulators** designed t
 
 ---
 
-## 🌐 5. Lorentz Boost Demonstrator (dN/dy vs. dN/dη)
+## 📐 5. Polar Angle vs. Pseudorapidity Detector Mapper
+* **File**: [05_pseudorapidity_detector_angle.html](05_pseudorapidity_detector_angle.html)
+* **Learning Objective**: Build spatial intuition for how the geometric polar angle $\theta$ maps to the logarithmic pseudorapidity scale ($\eta = -\ln\tan(\theta/2)$) inside a concentric cylindrical particle tracker.
+* **Difficulty**: Intermediate
+* **Recommended Run Time**: 3–4 minutes
+* **Key Takeaway**: At $\theta = 90^\circ$ (transverse barrel), particles fly straight out, mapping to $\eta = 0$. As $\theta \to 0^\circ$ (forward beam pipe), particles travel nearly parallel to the beam, mapping to $\eta \to +\infty$ logarithmically. Toggling the *Auto-Sweep* shows a continuous bounce sweep across the forward-backward boundaries, dynamically lighting up TPC and calorimeter intersections.
+* **Reference**: Sahoo Chapter 5.2.2; Beamer Slide 27.
+
+---
+
+## 🌐 6. Lorentz Boost Demonstrator (dN/dy vs. dN/dη)
 * **File**: [rapidity_boost.html](rapidity_boost.html)
 * **Learning Objective**: Contrast the Lorentz-invariance of rapidity $y$ with the shift and shape-change of pseudorapidity $\eta$ under boosts.
 * **Difficulty**: Intermediate
@@ -54,7 +64,7 @@ This directory contains **8 interactive HTML5/JavaScript simulators** designed t
 
 ---
 
-## 💥 6. Heavy-Ion Collision Stages
+## 💥 7. Heavy-Ion Collision Stages
 * **File**: [collision_animation.html](collision_animation.html)
 * **Learning Objective**: Chronologically trace the 5 dynamical epochs of a heavy-ion collision from initial Lorentz-contracted nuclei to final-state freeze-out.
 * **Difficulty**: Advanced
@@ -64,7 +74,7 @@ This directory contains **8 interactive HTML5/JavaScript simulators** designed t
 
 ---
 
-## 🧲 7. Time Projection Chamber (TPC) Event Display
+## 🧲 8. Time Projection Chamber (TPC) Event Display
 * **File**: [event_display.html](event_display.html)
 * **Learning Objective**: Visualize charged hadron tracking, momentum measurement from helical gas ionization curvature, and PID via Time-of-Flight or RICH.
 * **Difficulty**: Intermediate
@@ -74,7 +84,7 @@ This directory contains **8 interactive HTML5/JavaScript simulators** designed t
 
 ---
 
-## 📊 8. Transverse Spectra Builder
+## 📊 9. Transverse Spectra Builder
 * **File**: [pt_spectrum_builder.html](pt_spectrum_builder.html)
 * **Learning Objective**: Model thermal transverse momentum $p_T$ spectra and extract freeze-out temperatures using exponential fits.
 * **Difficulty**: Beginner
