@@ -45,6 +45,14 @@ def rapidity(px, py, pz, mass):
     the beam axis. The shape of the rapidity distribution dN/dy is
     invariant under such boosts — only the position shifts by y_cm.
 
+    EXAMPLE: pion (m_pi ≈ 0.140 GeV) with pz = 1.0 GeV/c
+    >>> y = rapidity(0.0, 0.0, 1.0, 0.140)
+    >>> print(f"y = {y:.3f}")  # y ≈ 2.662
+
+    INVARIANCE & ADDITIVITY:
+    Linear addition under longitudinal Lorentz boosts:
+    >>> y_boosted = y + y_beam
+
     Returns:
         y (dimensionless)
     """
