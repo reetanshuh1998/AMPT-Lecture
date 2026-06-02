@@ -33,11 +33,12 @@ jupyter notebook exercises/day01_hands_on.ipynb
 ---
 
 ## 🎨 Interactive HTML5/JS Physics Simulators
-The course includes **7 fully functional, interactive animations** located in the `animations/` folder. They can be opened in any web browser instantly to dynamically explore relativistic kinematics:
+The course includes **8 fully functional, interactive animations** located in the `animations/` folder. They can be opened in any web browser instantly to dynamically explore relativistic kinematics:
 
 *   🌐 **[Velocity Saturation Comparison](file:///home/reet/AMPT-Lecture/animations/01_velocity_saturation_comparison.html)** — Classical vs. Relativistic velocity addition: see why successive boosts saturate at $c$, validating Day 1 Laboratory Problem 1.
 *   🌐 **[Spacetime Minkowski Diagram](file:///home/reet/AMPT-Lecture/animations/02_spacetime_minkowski_diagram.html)** — Interactive Lorentz boosts: watch hyperbolic axis rotations, moving grids skewing, and toggle the Simultaneity Demo!
 *   🌐 **[Resolution vs. Energy Explorer](file:///home/reet/AMPT-Lecture/animations/03_debroglie_resolution_probing.html)** — Wave-particle duality de Broglie wave probe, Airy disk resolution, and concentric target shell penetration visualizer. Validates Slide 4.
+*   🌐 **[QCD Confinement & Screening](file:///home/reet/AMPT-Lecture/animations/04_qcd_confinement_screening.html)** — Cornell static potential snapping in vacuum, and Debye color screening charmonium melting in QGP. Validates Slide 3.
 *   🌐 **[Collision Kinematics](file:///home/reet/AMPT-Lecture/animations/collision_animation.html)** — Run colliding beams and target nuclei to observe fixed-target center-of-mass energy limits vs. collider linear advantages.
 *   🌐 **[Lorentz Boost Demonstrator](file:///home/reet/AMPT-Lecture/animations/rapidity_boost.html)** — Dynamically apply collinear boosts to observe relativistic velocity addition saturation at $c$ while rapidity adds linearly.
 *   🌐 **[TPC event display](file:///home/reet/AMPT-Lecture/animations/event_display.html)** — An interactive 3D event tracker simulating charged hadron curvature inside a Time Projection Chamber under high magnetic fields.

@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QCD Confinement & Debye Screening Explorer</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0b0f19;
+            color: #f8fafc;
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            margin-top: 20px;
+        }
+        @media (min-width: 1000px) {
+            .container {
+                grid-template-columns: 0.8fr 1.2fr;
+            }
+        }
+        .panel {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+        }
+        .header-panel {
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%);
+            border: 1px solid rgba(236, 72, 153, 0.2);
+            text-align: left;
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 12px;
+        }
+        .header-panel h1 {
+            font-size: 26px;
+            font-weight: 700;
+            background: linear-gradient(to right, #cbd5e1, #f472b6, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        .header-panel p {
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+        @media (min-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .full-width-card {
+                grid-column: span 2;
+            }
+        }
+        .visual-card {
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .visual-card h3 {
+            font-size: 15px;
+            color: #a5b4fc;
+            margin-bottom: 12px;
+            align-self: flex-start;
+            font-weight: 600;
+            border-left: 3px solid #ec4899;
+            padding-left: 8px;
+        }
+        canvas {
+            background: #090d16;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            max-width: 100%;
+            height: auto;
+        }
+        .control-group {
+            margin-bottom: 16px;
+        }
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #cbd5e1;
+        }
+        .control-label span.value {
+            font-family: 'JetBrains Mono', monospace;
+            color: #f472b6;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #1e293b;
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #f472b6;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(244, 114, 182, 0.5);
+            transition: transform 0.1s, background-color 0.1s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+            background: #818cf8;
+        }
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #f8fafc;
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        select:focus {
+            border-color: #f472b6;
+        }
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #cbd5e1;
+            margin-top: 8px;
+            user-select: none;
+        }
+        .toggle-container input {
+            width: 16px;
+            height: 16px;
+            accent-color: #f472b6;
+            cursor: pointer;
+        }
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            flex: 1;
+            min-width: 120px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: none;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #ec4899 0%, #a855f7 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(236, 72, 153, 0.4);
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #f472b6 0%, #c084fc 100%);
+            transform: translateY(-1px);
+        }
+        .btn-pause {
+            background: #d97706;
+            color: white;
+            box-shadow: 0 4px 14px rgba(217, 119, 6, 0.4);
+        }
+        .btn-pause:hover:not(:disabled) {
+            background: #f59e0b;
+            transform: translateY(-1px);
+        }
+        .btn-pause:disabled {
+            background: #334155;
+            color: #64748b;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        .btn-reset {
+            background: #475569;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-reset:hover {
+            background: #64748b;
+            transform: translateY(-1px);
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 16px 0;
+        }
+        .metric-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+        .metric-card h4 {
+            font-size: 9px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+        .metric-card p {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            color: #f472b6;
+        }
+        .metric-card.survival {
+            grid-column: span 2;
+        }
+        .metric-card.survival p {
+            color: #10b981;
+            font-size: 13px;
+        }
+        .info-panel {
+            margin-top: 20px;
+            border-left: 4px solid #ec4899;
+            background: rgba(236, 72, 153, 0.05);
+            padding: 16px;
+            border-radius: 0 12px 12px 0;
+        }
+        .info-panel h3 {
+            font-size: 14px;
+            color: #f472b6;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .info-panel p {
+            font-size: 12px;
+            color: #cbd5e1;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+        .info-panel ul {
+            list-style-type: none;
+            font-size: 12px;
+            color: #cbd5e1;
+            line-height: 1.6;
+        }
+        .info-panel li {
+            margin-bottom: 6px;
+            position: relative;
+            padding-left: 14px;
+        }
+        .info-panel li::before {
+            content: "•";
+            color: #f472b6;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            font-size: 16px;
+            top: -2px;
+        }
+        .code-highlight {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.06);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #f472b6;
+        }
+        .status-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 12px 0 8px 0;
+            font-size: 12px;
+            color: #94a3b8;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #475569;
+            transition: all 0.3s ease;
+        }
+        .status-dot.active {
+            background-color: #10b981;
+            box-shadow: 0 0 10px #10b981;
+            animation: pulse 1.5s infinite;
+        }
+        .status-dot.paused {
+            background-color: #f59e0b;
+            box-shadow: 0 0 10px #f59e0b;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+        .narration-panel {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-left: 4px solid #f59e0b;
+            border-radius: 8px;
+            padding: 14px;
+            margin-top: 14px;
+            display: none;
+        }
+        .narration-panel h4 {
+            font-size: 12px;
+            color: #f59e0b;
+            font-weight: 700;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .narration-panel p {
+            font-size: 12px;
+            color: #fef08a;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="panel">
+            <div class="header-panel">
+                <h1>🔬 QCD Confinement & Screening</h1>
+                <p>Day 5 Lecture Simulator: Explore how linear quark confinement strings snap in vacuum and how Debye color screening flatlines the potential at high temperatures in a Quark-Gluon Plasma.</p>
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <label for="tempSlider">Medium Temperature (T)</label>
+                    <span class="value" id="tempDisplay">0 MeV</span>
+                </div>
+                <input type="range" id="tempSlider" min="0" max="400" step="5" value="0"
+                       oninput="updateTemperature(this.value)">
+            </div>
+
+            <div class="control-group">
+                <div class="control-label">
+                    <label for="sepSlider">Quark Separation (r)</label>
+                    <span class="value" id="sepDisplay">0.50 fm</span>
+                </div>
+                <input type="range" id="sepSlider" min="0.05" max="2.50" step="0.05" value="0.50"
+                       oninput="updateSeparation(this.value)">
+            </div>
+
+            <div class="control-group">
+                <label for="couplingPreset" class="control-label" style="margin-bottom: 6px;">Debye Mass Coupling Presets (c)</label>
+                <select id="couplingPreset" onchange="updateCouplingPreset(this.value)">
+                    <option value="1.5">c = 1.5 (Lattice-inspired weak screening)</option>
+                    <option value="2.1" selected>c = 2.1 (Perturbative QCD default)</option>
+                    <option value="3.0">c = 3.0 (Strongly coupled screening)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="quarkoniumSelect" class="control-label" style="margin-bottom: 6px;">Heavy Quarkonium States</label>
+                <select id="quarkoniumSelect" onchange="updateQuarkonium(this.value)">
+                    <option value="jpsi" selected>Charmonium J/&psi; (r₀ ≈ 0.31 fm)</option>
+                    <option value="upsilon">Bottomonium &Upsilon; (r₀ ≈ 0.14 fm)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label class="toggle-container">
+                    <input type="checkbox" id="normalizeToggle" onchange="toggleNormalization(this.checked)">
+                    Plot Normalized Energy Difference [V(r,T) - V(&infin;,T)]
+                </label>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h4>Debye Mass (&mu;)</h4>
+                    <p id="metric-mu">0.00 GeV</p>
+                </div>
+                <div class="metric-card">
+                    <h4>Screening Length (&lambda;D)</h4>
+                    <p id="metric-lambda">&infin; fm</p>
+                </div>
+                <div class="metric-card survival">
+                    <h4>State & Survival Probability S(T)</h4>
+                    <p id="metric-state">CONFINED (100% Bound)</p>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button id="btn-animate" class="btn-primary" onclick="toggleAnimateScan()"><span>▶</span> Guided Lecture Scan</button>
+                <button id="btn-pause" class="btn-pause" onclick="togglePauseScan()" disabled><span>⏸</span> Pause</button>
+                <button class="btn-reset" onclick="resetExplorer()"><span>🔄</span> Reset</button>
+            </div>
+
+            <div class="status-container">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">SCAN IDLE</span>
+            </div>
+
+            <div id="narrationPanel" class="narration-panel">
+                <h4 id="narrationTitle">NARRAATION TITLE</h4>
+                <p id="narrationText">Narration text goes here.</p>
+            </div>
+
+            <div class="info-panel">
+                <h3>Connection to Experiment:</h3>
+                <p><strong>Matui-Satz Mechanism</strong>: Heavy Quarkonium suppression ($R_{AA} < 1$) in heavy-ion collisions serves as a direct QGP thermometer. Because $\Upsilon$ is smaller than $J/\psi$, it survives at higher temperatures, illustrating <strong>sequential suppression</strong> at RHIC and LHC.</p>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="visual-card">
+                <h3>📈 QCD Static potential V(r, T)</h3>
+                <div id="potentialPlot" style="width: 100%; height: 260px;"></div>
+                <p style="font-size: 10px; color: #94a3b8; margin-top: 4px;">*Model Cornell potential. Lattice QCD often reports thermodynamic free energy $F(r, T)$ or internal energy $U(r, T)$.</p>
+            </div>
+
+            <div class="visual-card">
+                <h3>💥 Flux-Tube Tension & Screening</h3>
+                <canvas id="fluxCanvas" width="400" height="260"></canvas>
+            </div>
+
+            <div class="visual-card full-width-card">
+                <h3>⚛ Matsui-Satz Quarkonium Suppression & Orbit</h3>
+                <canvas id="orbitCanvas" width="800" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fluxCanvas = document.getElementById('fluxCanvas');
+        const fCtx = fluxCanvas.getContext('2d');
+
+        const orbitCanvas = document.getElementById('orbitCanvas');
+        const oCtx = orbitCanvas.getContext('2d');
+
+        // Strong interaction constants
+        const alpha_s = 0.35;
+        const sigma = 0.9; // GeV/fm (string tension)
+        const hbar_c = 0.197327; // GeV·fm
+        const T_c = 155; // MeV
+
+        // State parameters
+        let tempValue = 0; // MeV
+        let sepValue = 0.50; // fm
+        let debyePreset = 2.1;
+        let quarkoniumState = 'jpsi';
+        let normalizePotential = false;
+
+        // Visual animation parameters
+        let particleAngle = 0;
+        let showSnappingFlash = 0;
+        let hasSnapped = false;
+        let snapQuarks = [];
+
+        // Guided scanning variables
+        let guidedInterval = null;
+        let scanStep = 0;
+        let scanPaused = false;
+
+        function updateTemperature(val) {
+            tempValue = parseFloat(val);
+            document.getElementById('tempDisplay').textContent = tempValue + ' MeV';
+            document.getElementById('tempSlider').value = val;
+            updateSimulation();
+        }
+
+        function updateSeparation(val) {
+            sepValue = parseFloat(val);
+            document.getElementById('sepDisplay').textContent = sepValue.toFixed(2) + ' fm';
+            document.getElementById('sepSlider').value = val;
+            // Check snap condition at T < Tc
+            if (tempValue < T_c) {
+                if (sepValue >= 1.5) {
+                    if (!hasSnapped) {
+                        hasSnapped = true;
+                        showSnappingFlash = 15; // flashes for 15 ticks
+                        // Spawn new q-qbar pair in middle
+                        snapQuarks = [
+                            { x: -0.4, vx: -0.02, label: 'q̄', color: '#ff6b6b' },
+                            { x: 0.4, vx: 0.02, label: 'q', color: '#3b82f6' }
+                        ];
+                    }
+                } else {
+                    hasSnapped = false;
+                    snapQuarks = [];
+                }
+            } else {
+                hasSnapped = false;
+                snapQuarks = [];
+            }
+            updateSimulation();
+        }
+
+        function updateCouplingPreset(val) {
+            debyePreset = parseFloat(val);
+            updateSimulation();
+        }
+
+        function updateQuarkonium(val) {
+            quarkoniumState = val;
+            updateSimulation();
+        }
+
+        function toggleNormalization(checked) {
+            normalizePotential = checked;
+            updateSimulation();
+        }
+
+        function getPhysicsParameters() {
+            // Convert T to GeV
+            const T_GeV = tempValue / 1000.0;
+            
+            // Calculate Debye mass: mu(T) = c * T
+            let mu_GeV = 0;
+            if (tempValue >= T_c) {
+                mu_GeV = debyePreset * T_GeV;
+            }
+
+            // Convert mu to fm^-1: mu_fm = mu_GeV / hbar_c
+            const mu_fm = mu_GeV / hbar_c;
+
+            // Calculate Debye length lambda_D = 1 / mu_fm
+            let lambda_D = Infinity;
+            if (mu_fm > 0.001) {
+                lambda_D = 1.0 / mu_fm;
+            }
+
+            // Quarkonium binding radius
+            const r0 = quarkoniumState === 'jpsi' ? 0.31 : 0.14;
+
+            // Smooth survival probability S(T) = exp( - (r0 / lambda_D)^3 )
+            let survivalProb = 1.0;
+            if (lambda_D !== Infinity) {
+                survivalProb = Math.exp(-Math.pow(r0 / lambda_D, 3));
+            }
+
+            return { mu_GeV, mu_fm, lambda_D, r0, survivalProb };
+        }
+
+        function calculatePotential(r, mu) {
+            // V(r, T) = -alpha_s / r * e^(-mu*r) + (sigma / mu) * (1 - e^(-mu*r))
+            if (mu < 0.001) {
+                return -alpha_s / r + sigma * r;
+            } else {
+                return -alpha_s / r * Math.exp(-mu * r) + (sigma / mu) * (1 - Math.exp(-mu * r));
+            }
+        }
+
+        function updateSimulation() {
+            const params = getPhysicsParameters();
+
+            // Update Metrics
+            document.getElementById('metric-mu').innerHTML = `${params.mu_GeV.toFixed(3)} GeV <span style="font-size: 10px; color:#94a3b8;">(${params.mu_fm.toFixed(2)} fm⁻¹)</span>`;
+            document.getElementById('metric-lambda').textContent = params.lambda_D === Infinity ? '∞ fm' : params.lambda_D.toFixed(3) + ' fm';
+
+            const survPct = (params.survivalProb * 100).toFixed(0);
+            const stateText = document.getElementById('metric-state');
+
+            // Set state labels based on survival
+            if (tempValue < T_c) {
+                stateText.textContent = `CONFINED (Hadronic Vacuum — 100% Bound)`;
+                stateText.style.color = '#38bdf8';
+            } else {
+                if (params.survivalProb >= 0.90) {
+                    stateText.textContent = `BOUND IN PLASMA (S = ${survPct}%)`;
+                    stateText.style.color = '#34d399';
+                } else if (params.survivalProb > 0.10) {
+                    stateText.textContent = `DISSOCIATING (S = ${survPct}%)`;
+                    stateText.style.color = '#fbbf24';
+                } else {
+                    stateText.textContent = `MELTED / DISSOLVED (S = ${survPct}%)`;
+                    stateText.style.color = '#f87171';
+                }
+            }
+
+            updatePlots(params.mu_fm);
+        }
+
+        function updatePlots(mu) {
+            const { lambda_D } = getPhysicsParameters();
+
+            // Generate r sweep
+            const rVals = [];
+            const vTotal = [];
+            const vCoulomb = [];
+            const vLinear = [];
+
+            const rLimit = 2.5;
+
+            // Offset limit V(infinity, T)
+            const V_inf = mu > 0.001 ? (sigma / mu) : 0;
+
+            for (let r = 0.05; r <= rLimit; r += 0.05) {
+                rVals.push(r);
+                let V_tot = calculatePotential(r, mu);
+                let V_c = -alpha_s / r * Math.exp(-mu * r);
+                let V_l = mu > 0.001 ? (sigma / mu) * (1 - Math.exp(-mu * r)) : sigma * r;
+
+                if (normalizePotential && mu > 0.001) {
+                    vTotal.push(V_tot - V_inf);
+                    vCoulomb.push(V_c - V_inf * (V_c / V_tot)); // scaled Coulomb display
+                    vLinear.push(V_l - V_inf);
+                } else {
+                    vTotal.push(V_tot);
+                    vCoulomb.push(V_c);
+                    vLinear.push(V_l);
+                }
+            }
+
+            // Current separation coordinates
+            const currentV = calculatePotential(sepValue, mu);
+            const currentV_plot = normalizePotential && mu > 0.001 ? (currentV - V_inf) : currentV;
+
+            let traceTotal = {
+                x: rVals, y: vTotal,
+                mode: 'lines',
+                name: 'Cornell Total',
+                line: {color: '#ec4899', width: 3}
+            };
+
+            let traceCoulomb = {
+                x: rVals, y: vCoulomb,
+                mode: 'lines',
+                name: 'Coulomb Limit',
+                line: {color: '#38bdf8', width: 1.5, dash: 'dash'}
+            };
+
+            let traceLinear = {
+                x: rVals, y: vLinear,
+                mode: 'lines',
+                name: 'Confinement / Saturation',
+                line: {color: '#fbbf24', width: 1.5, dash: 'dot'}
+            };
+
+            let tracePoint = {
+                x: [sepValue], y: [currentV_plot],
+                mode: 'markers',
+                name: 'Current Separation',
+                marker: {size: 11, color: '#f472b6', symbol: 'diamond', line: {color: '#ffffff', width: 1.5}}
+            };
+
+            const plotLayout = {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                template: 'plotly_dark',
+                margin: { t: 15, b: 35, l: 45, r: 15 },
+                xaxis: { 
+                    title: { text: 'Quark Separation r (fm)', font: { family: 'Outfit', size: 11 } },
+                    gridcolor: '#1e293b',
+                    linecolor: '#334155',
+                    range: [0, 2.5]
+                },
+                yaxis: { 
+                    title: { text: 'Potential V(r) (GeV)', font: { family: 'Outfit', size: 11 } },
+                    gridcolor: '#1e293b',
+                    linecolor: '#334155',
+                    range: normalizePotential && mu > 0.001 ? [-1.5, 0.2] : [-1.5, 2.5]
+                },
+                showlegend: false,
+                hovermode: 'closest'
+            };
+
+            Plotly.newPlot('potentialPlot', [traceTotal, traceCoulomb, traceLinear, tracePoint], plotLayout, {responsive: true, displayModeBar: false});
+        }
+
+        function drawFluxTension() {
+            fCtx.clearRect(0, 0, fluxCanvas.width, fluxCanvas.height);
+            fCtx.fillStyle = '#090d16';
+            fCtx.fillRect(0, 0, fluxCanvas.width, fluxCanvas.height);
+
+            const cX = fluxCanvas.width / 2;
+            const cY = fluxCanvas.height / 2;
+
+            // Map sepValue (0.05 to 2.5 fm) to canvas px (10 to 160 px half-width)
+            const mapHalfWidth = sepValue * 60;
+
+            const xQ = cX - mapHalfWidth;
+            const xQbar = cX + mapHalfWidth;
+
+            if (tempValue < T_c) {
+                // HADRONIC MATTER: String Confinement active
+                if (hasSnapped) {
+                    // Snapped state: draw two independent mesons
+                    // Draw snapped left pair
+                    const xL = cX - 70;
+                    fCtx.fillStyle = '#ef4444'; // Red q
+                    fCtx.beginPath(); fCtx.arc(xL - 25, cY, 6, 0, 2*Math.PI); fCtx.fill();
+                    fCtx.fillStyle = '#ff6b6b'; // Light qbar
+                    fCtx.beginPath(); fCtx.arc(xL + 25, cY, 6, 0, 2*Math.PI); fCtx.fill();
+
+                    fCtx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+                    fCtx.lineWidth = 4;
+                    fCtx.beginPath(); fCtx.moveTo(xL - 25, cY); fCtx.lineTo(xL + 25, cY); fCtx.stroke();
+
+                    // Draw snapped right pair
+                    const xR = cX + 70;
+                    fCtx.fillStyle = '#ff6b6b';
+                    fCtx.beginPath(); fCtx.arc(xR - 25, cY, 6, 0, 2*Math.PI); fCtx.fill();
+                    fCtx.fillStyle = '#3b82f6'; // Blue q
+                    fCtx.beginPath(); fCtx.arc(xR + 25, cY, 6, 0, 2*Math.PI); fCtx.fill();
+
+                    fCtx.strokeStyle = 'rgba(59, 130, 246, 0.4)';
+                    fCtx.lineWidth = 4;
+                    fCtx.beginPath(); fCtx.moveTo(xR - 25, cY); fCtx.lineTo(xR + 25, cY); fCtx.stroke();
+
+                    // Labels
+                    fCtx.fillStyle = '#cbd5e1';
+                    fCtx.font = '10px JetBrains Mono, monospace';
+                    fCtx.fillText('q', xL - 28, cY - 12);
+                    fCtx.fillText('q̄', xL + 22, cY - 12);
+                    fCtx.fillText('q̄', xR - 28, cY - 12);
+                    fCtx.fillText('q', xR + 22, cY - 12);
+
+                    fCtx.fillStyle = '#f59e0b';
+                    fCtx.font = 'bold 11px Outfit, sans-serif';
+                    fCtx.fillText('STRING SNAPPED: Hadronization!', cX - 90, cY + 40);
+
+                    // Draw snapping flash circle if active
+                    if (showSnappingFlash > 0) {
+                        showSnappingFlash--;
+                        fCtx.strokeStyle = 'rgba(255, 255, 255,' + (showSnappingFlash / 15) + ')';
+                        fCtx.lineWidth = 8;
+                        fCtx.beginPath();
+                        fCtx.arc(cX, cY, 30 + (15 - showSnappingFlash)*3, 0, 2*Math.PI);
+                        fCtx.stroke();
+                    }
+                } else {
+                    // Confined elastic flux tube
+                    fCtx.strokeStyle = '#ef4444';
+                    fCtx.lineWidth = Math.max(14 - sepValue * 4, 3); // gets thinner as stretched
+                    fCtx.beginPath();
+                    fCtx.moveTo(xQ, cY);
+                    fCtx.lineTo(xQbar, cY);
+                    fCtx.stroke();
+
+                    // Glowing neon tube overlays
+                    fCtx.strokeStyle = 'rgba(239, 68, 68, 0.35)';
+                    fCtx.lineWidth = fCtx.lineWidth + 8;
+                    fCtx.beginPath(); fCtx.moveTo(xQ, cY); fCtx.lineTo(xQbar, cY); fCtx.stroke();
+
+                    // Quarks
+                    fCtx.fillStyle = '#3b82f6'; // q (Blue)
+                    fCtx.beginPath(); fCtx.arc(xQ, cY, 8, 0, 2*Math.PI); fCtx.fill();
+                    fCtx.fillStyle = '#ff6b6b'; // qbar (Red)
+                    fCtx.beginPath(); fCtx.arc(xQbar, cY, 8, 0, 2*Math.PI); fCtx.fill();
+
+                    // Labels
+                    fCtx.fillStyle = '#ffffff';
+                    fCtx.font = 'bold 11px sans-serif';
+                    fCtx.fillText('q', xQ - 3, cY - 14);
+                    fCtx.fillText('q̄', xQbar - 4, cY - 14);
+
+                    fCtx.fillStyle = '#ef4444';
+                    fCtx.font = 'bold 11px Outfit, sans-serif';
+                    fCtx.fillText('CONFINED: Flux-Tube Active', cX - 70, cY + 45);
+                    fCtx.fillStyle = '#cbd5e1';
+                    fCtx.font = '9px JetBrains Mono, monospace';
+                    fCtx.fillText(`Illustrative snap limit: r_break ~ 1.5 fm`, cX - 90, cY + 65);
+                }
+            } else {
+                // DECONFINED PLASMA: Thermal swarming color charges screening
+                fCtx.strokeStyle = 'rgba(255,255,255,0.06)';
+                fCtx.lineWidth = 1;
+                fCtx.setLineDash([4, 4]);
+                fCtx.beginPath(); fCtx.moveTo(xQ, cY); fCtx.lineTo(xQbar, cY); fCtx.stroke();
+                fCtx.setLineDash([]);
+
+                // Draw swarming background quarks & gluons
+                fCtx.fillStyle = 'rgba(56, 189, 248, 0.3)'; // screened cloud
+                fCtx.beginPath(); fCtx.arc(xQ, cY, 20, 0, 2*Math.PI); fCtx.arc(xQbar, cY, 20, 0, 2*Math.PI); fCtx.fill();
+
+                // Swarm particles
+                for (let i = 0; i < 18; i++) {
+                    let rx = cX + (Math.sin(orbitAngle + i*5) * 160);
+                    let ry = cY + (Math.cos(orbitAngle*1.3 + i*9) * 80);
+                    
+                    // random colors
+                    fCtx.fillStyle = i % 3 === 0 ? '#38bdf8' : i % 3 === 1 ? '#f472b6' : '#fbbf24';
+                    fCtx.beginPath();
+                    fCtx.arc(rx, ry, i % 2 === 0 ? 3 : 2, 0, 2*Math.PI);
+                    fCtx.fill();
+                }
+
+                // Main Quarks
+                fCtx.fillStyle = '#3b82f6';
+                fCtx.beginPath(); fCtx.arc(xQ, cY, 8, 0, 2*Math.PI); fCtx.fill();
+                fCtx.fillStyle = '#ff6b6b';
+                fCtx.beginPath(); fCtx.arc(xQbar, cY, 8, 0, 2*Math.PI); fCtx.fill();
+
+                fCtx.fillStyle = '#ffffff';
+                fCtx.font = 'bold 11px sans-serif';
+                fCtx.fillText('q', xQ - 3, cY - 14);
+                fCtx.fillText('q̄', xQbar - 4, cY - 14);
+
+                fCtx.fillStyle = '#34d399';
+                fCtx.font = 'bold 11px Outfit, sans-serif';
+                fCtx.fillText('DECONFINED: Screening Swarm Active', cX - 95, cY + 45);
+            }
+        }
+
+        function drawQuarkoniumOrbit() {
+            oCtx.clearRect(0, 0, orbitCanvas.width, orbitCanvas.height);
+            oCtx.fillStyle = '#090d16';
+            oCtx.fillRect(0, 0, orbitCanvas.width, orbitCanvas.height);
+
+            const cX = orbitCanvas.width / 2;
+            const cY = orbitCanvas.height / 2;
+
+            const physics = getPhysicsParameters();
+
+            // Quarkonium binding radius (J/psi ~ 0.31fm, Upsilon ~ 0.14fm)
+            // Scale physically: J/psi orbit radius on screen = 65 px, Upsilon = 32 px
+            const r_orbit = quarkoniumState === 'jpsi' ? 65 : 30;
+
+            // Draw Debye screening circle sphere (glowing light sphere)
+            // If lambda_D = infinity, draw massive sphere
+            const R_screening = physics.lambda_D === Infinity ? 400 : Math.min(physics.lambda_D * 200, 300);
+
+            let shieldGrad = oCtx.createRadialGradient(cX, cY, 0, cX, cY, R_screening);
+            if (tempValue < T_c) {
+                shieldGrad.addColorStop(0, 'rgba(56, 189, 248, 0.08)');
+                shieldGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+            } else {
+                shieldGrad.addColorStop(0, 'rgba(236, 72, 153, 0.12)');
+                shieldGrad.addColorStop(0.5, 'rgba(236, 72, 153, 0.05)');
+                shieldGrad.addColorStop(1, 'rgba(236, 72, 153, 0)');
+            }
+            oCtx.fillStyle = shieldGrad;
+            oCtx.beginPath();
+            oCtx.arc(cX, cY, R_screening, 0, 2*Math.PI);
+            oCtx.fill();
+
+            // Draw screening boundary ring
+            oCtx.strokeStyle = tempValue < T_c ? 'rgba(56, 189, 248, 0.15)' : 'rgba(236, 72, 153, 0.4)';
+            oCtx.lineWidth = 1.5;
+            oCtx.setLineDash([5, 5]);
+            oCtx.beginPath();
+            oCtx.arc(cX, cY, R_screening, 0, 2*Math.PI);
+            oCtx.stroke();
+            oCtx.setLineDash([]);
+
+            // Label for Debye Sphere
+            oCtx.fillStyle = tempValue < T_c ? '#38bdf8' : '#f472b6';
+            oCtx.font = '11px JetBrains Mono, monospace';
+            const screenLabel = physics.lambda_D === Infinity ? 'Debye Shielding: Inactive (∞)' : `Debye Shielding Length λD ≈ ${physics.lambda_D.toFixed(3)} fm`;
+            oCtx.fillText(screenLabel, cX - R_screening + 10, cY - R_screening + 15);
+
+            // Orbit particles update
+            particleAngle += 0.04 * (physics.survivalProb);
+
+            const labelStr = quarkoniumState === 'jpsi' ? 'c' : 'b';
+            const stateStr = quarkoniumState === 'jpsi' ? 'J/ψ (Charmonium)' : 'Υ (Bottomonium)';
+
+            // Draw quarks
+            if (physics.survivalProb > 0.10) {
+                // Quarks are still bound or partially bound
+                // If partially bound, add orbital radius fluctuations
+                const wobble = (1.0 - physics.survivalProb) * 20 * Math.sin(particleAngle * 3);
+                const currentRadius = r_orbit + wobble;
+
+                const qx = cX + Math.cos(particleAngle) * currentRadius;
+                const qy = cY + Math.sin(particleAngle) * currentRadius * 0.7; // elliptical projection
+
+                const qbarx = cX - Math.cos(particleAngle) * currentRadius;
+                const qbary = cY - Math.sin(particleAngle) * currentRadius * 0.7;
+
+                // Draw orbit path lines
+                oCtx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+                oCtx.lineWidth = 1;
+                oCtx.beginPath();
+                oCtx.ellipse(cX, cY, currentRadius, currentRadius * 0.7, 0, 0, 2*Math.PI);
+                oCtx.stroke();
+
+                // Draw quarks
+                oCtx.fillStyle = '#ec4899';
+                oCtx.beginPath(); oCtx.arc(qx, qy, 7, 0, 2*Math.PI); oCtx.fill();
+                oCtx.fillStyle = '#a855f7';
+                oCtx.beginPath(); oCtx.arc(qbarx, qbary, 7, 0, 2*Math.PI); oCtx.fill();
+
+                oCtx.fillStyle = '#ffffff';
+                oCtx.font = 'bold 9px sans-serif';
+                oCtx.fillText(labelStr, qx - 2, qy + 3);
+                oCtx.fillText(labelStr + '̄', qbarx - 3, qbary + 3);
+
+                // Print Survival % Meter
+                oCtx.fillStyle = '#cbd5e1';
+                oCtx.font = 'bold 12px Outfit, sans-serif';
+                oCtx.fillText(`${stateStr} Survival Probability: ${(physics.survivalProb*100).toFixed(0)}%`, 20, 30);
+            } else {
+                // MELTED: quarks fly apart on straight lines
+                const travelDist = (1.0 - physics.survivalProb + 0.9) * 90; // pushes them apart
+                
+                const qx = cX + travelDist * 1.5;
+                const qy = cY - travelDist * 0.4;
+                const qbarx = cX - travelDist * 1.5;
+                const qbary = cY + travelDist * 0.4;
+
+                oCtx.fillStyle = '#ec4899';
+                oCtx.beginPath(); oCtx.arc(qx, qy, 7, 0, 2*Math.PI); oCtx.fill();
+                oCtx.fillStyle = '#a855f7';
+                oCtx.beginPath(); oCtx.arc(qbarx, qbary, 7, 0, 2*Math.PI); oCtx.fill();
+
+                oCtx.fillStyle = '#ffffff';
+                oCtx.font = 'bold 9px sans-serif';
+                oCtx.fillText(labelStr, qx - 2, qy + 3);
+                oCtx.fillText(labelStr + '̄', qbarx - 3, qbary + 3);
+
+                // Print melted label
+                oCtx.fillStyle = '#ef4444';
+                oCtx.font = 'bold 13px Outfit, sans-serif';
+                oCtx.fillText(`${stateStr} SUPPRESSED (Melted by color screening)`, 20, 30);
+            }
+        }
+
+        function toggleAnimateScan() {
+            if (guidedInterval) {
+                stopScan();
+            } else {
+                startScan();
+            }
+        }
+
+        function startScan() {
+            scanPaused = false;
+            scanStep = 0;
+            document.getElementById('btn-animate').innerHTML = `<span>⏹</span> Stop Scan`;
+            document.getElementById('btn-animate').style.background = "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
+            document.getElementById('btn-pause').disabled = false;
+            document.getElementById('btn-pause').innerHTML = `<span>⏸</span> Pause`;
+            document.getElementById('btn-pause').style.background = "#d97706";
+            updateStatusScan('running');
+
+            // Setup automated scan interval
+            guidedInterval = setInterval(() => {
+                if (scanPaused) return;
+
+                scanStep++;
+                if (scanStep <= 60) {
+                    // Hadronic Phase: T grows from 0 to 130 MeV
+                    let T = Math.min((scanStep / 60) * 130, 130);
+                    updateTemperature(T);
+                    showNarration(
+                        "Phase 1: Vacuum Confinement (T < T_c)",
+                        `At low temperatures, QCD is in the confined hadronic phase. The string tension is fully active ($\sigma \\approx 0.9$ GeV/fm). Quarks inside hadrons are bound within elastic gluonic flux-tubes. Pulling a quark stretches this tube until the energy snaps it to fragment new hadrons, making free quarks impossible to isolate.`
+                    );
+                } else if (scanStep <= 100) {
+                    // Transition Crossover Phase: T grows from 130 to 180 MeV
+                    let T = 130 + ((scanStep - 60) / 40) * 50;
+                    updateTemperature(T);
+                    showNarration(
+                        "Phase 2: Chiral & Deconfinement Crossover (T ≈ T_c)",
+                        `Around the crossover region ($140 - 170$ MeV, with standard crossover $T_c \\approx 155$ MeV), the confining string melts. Lattice QCD reports a smooth transition where individual quarks and gluons begin to transition into a deconfined Quark-Gluon Plasma.`
+                    );
+                } else if (scanStep <= 160) {
+                    // QGP Deconfinement: T grows from 180 to 400 MeV
+                    let T = 180 + ((scanStep - 100) / 60) * 220;
+                    updateTemperature(T);
+                    showNarration(
+                        "Phase 3: Color Screening & QGP (T > T_c)",
+                        `At extremely high temperatures, a deconfined Quark-Gluon Plasma (QGP) is formed. A swarming sea of thermal quarks and gluons shields the color charges, creating Debye color screening. The potential flatlines at large separations, causing quarkonium states like $J/\\psi$ and $\\Upsilon$ to dissolve sequentially.`
+                    );
+                } else {
+                    stopScan();
+                }
+            }, 100);
+        }
+
+        function stopScan() {
+            if (guidedInterval) clearInterval(guidedInterval);
+            guidedInterval = null;
+            document.getElementById('btn-animate').innerHTML = `<span>▶</span> Guided Lecture Scan`;
+            document.getElementById('btn-animate').style.background = "linear-gradient(135deg, #ec4899 0%, #a855f7 100%)";
+            document.getElementById('btn-pause').disabled = true;
+            document.getElementById('btn-pause').innerHTML = `<span>⏸</span> Pause`;
+            document.getElementById('btn-pause').style.background = "#334155";
+            document.getElementById('narrationPanel').style.display = 'none';
+            updateStatusScan('idle');
+        }
+
+        function togglePauseScan() {
+            scanPaused = !scanPaused;
+            if (scanPaused) {
+                document.getElementById('btn-pause').innerHTML = `<span>▶</span> Resume`;
+                document.getElementById('btn-pause').style.background = "#16a34a";
+                updateStatusScan('paused');
+            } else {
+                document.getElementById('btn-pause').innerHTML = `<span>⏸</span> Pause`;
+                document.getElementById('btn-pause').style.background = "#d97706";
+                updateStatusScan('running');
+            }
+        }
+
+        function showNarration(title, text) {
+            document.getElementById('narrationPanel').style.display = 'block';
+            document.getElementById('narrationTitle').textContent = title;
+            document.getElementById('narrationText').textContent = text;
+        }
+
+        function updateStatusScan(state) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            dot.className = 'status-dot';
+            if (state === 'running') {
+                dot.classList.add('active');
+                text.textContent = 'SCAN RUNNING';
+            } else if (state === 'paused') {
+                dot.classList.add('paused');
+                text.textContent = 'SCAN PAUSED';
+            } else {
+                text.textContent = 'SCAN IDLE';
+            }
+        }
+
+        function resetExplorer() {
+            stopScan();
+            updateTemperature(0);
+            updateSeparation(0.50);
+            document.getElementById('couplingPreset').value = '2.1';
+            document.getElementById('quarkoniumSelect').value = 'jpsi';
+            document.getElementById('normalizeToggle').checked = false;
+            debyePreset = 2.1;
+            quarkoniumState = 'jpsi';
+            normalizePotential = false;
+            updateSimulation();
+        }
+
+        // Independent smooth orbit loop
+        setInterval(() => {
+            drawQuarkoniumOrbit();
+            // Swarm loops in flux canvas
+            if (tempValue >= T_c) {
+                drawFluxTension();
+            }
+        }, 30);
+
+        // Initial setup
+        updateTemperature(0);
+        updateSeparation(0.50);
+    </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # Animation Suite Performance & Engagement Metrics
 
-This document indexes performance, responsiveness, compatibility, and complexity metrics for all **7 interactive HTML5/JS physics simulators** in this repository.
+This document indexes performance, responsiveness, compatibility, and complexity metrics for all **8 interactive HTML5/JS physics simulators** in this repository.
 
 ---
 
@@ -11,10 +11,11 @@ This document indexes performance, responsiveness, compatibility, and complexity
 | **1. Velocity Saturation** | 8.8 KB | < 50ms | ✅ Yes (Flex/Grid) | Plotly.js (CDN) | SVG / WebGL |
 | **2. Minkowski Diagram** | 12.8 KB | < 30ms | ✅ Yes (Flex/Grid) | None (Pure JS) | HTML5 Canvas |
 | **3. Resolution vs. Energy** | 18.2 KB | < 50ms | ✅ Yes (Flex/Grid) | Plotly.js (CDN) | Canvas + Plotly SVG |
-| **4. Lorentz Boost** | 10.2 KB | < 60ms | ✅ Yes | Plotly.js (CDN) | SVG / WebGL |
-| **5. Collision Stages** | 22.5 KB | < 80ms | ✅ Yes | None (Pure JS) | HTML5 Canvas |
-| **6. TPC Event Display** | 15.6 KB | < 40ms | ✅ Yes | Three.js (CDN) | WebGL (3D) |
-| **7. Transverse Spectra** | 9.4 KB | < 50ms | ✅ Yes | Plotly.js (CDN) | SVG / WebGL |
+| **4. Confinement & Screening**| 19.8 KB | < 60ms | ✅ Yes (Flex/Grid) | Plotly.js (CDN) | Canvas + Plotly SVG |
+| **5. Lorentz Boost** | 10.2 KB | < 60ms | ✅ Yes | Plotly.js (CDN) | SVG / WebGL |
+| **6. Collision Stages** | 22.5 KB | < 80ms | ✅ Yes | None (Pure JS) | HTML5 Canvas |
+| **7. TPC Event Display** | 15.6 KB | < 40ms | ✅ Yes | Three.js (CDN) | WebGL (3D) |
+| **8. Transverse Spectra** | 9.4 KB | < 50ms | ✅ Yes | Plotly.js (CDN) | SVG / WebGL |
 
 ---
 
@@ -35,20 +36,25 @@ This document indexes performance, responsiveness, compatibility, and complexity
 * **Optimization**: Off-screen Canvas rendering. Active orbits are animated via a separate high-efficiency loop that updates only the sub-nuclear canvas, leaving the Plotly chart untouched to eliminate rendering lag.
 * **Synchronization**: All mathematical calculations, Airy diffraction formulas, and concentric penetration depths update instantaneously from a single, centralized state manager on slider interaction.
 
-### 4. Lorentz Boost Demonstrator (`rapidity_boost.html`)
+### 4. QCD Confinement & Debye Screening Explorer (`04_qcd_confinement_screening.html`)
+* **Complexity**: High (calculates vacuum Cornell potential and thermal Debye color screened potentials, simulates string elastic snapping, colorful thermal background QGP particles swarming, and heavy quarkonium orbits with Matsui-Satz survival probability).
+* **Optimization**: Dual canvas orbit rendering loops separated from Plotly.js redraw debouncers to ensure frame rate stays at a solid 30 FPS.
+* **Preservation**: Implements L'Hôpital's limiting boundaries natively to prevent division-by-zero errors when temperature slides to $T \to 0$ MeV.
+
+### 5. Lorentz Boost Demonstrator (`rapidity_boost.html`)
 * **Complexity**: Medium (computes multiple Gaussian and Jacobian conversions across the rapidity-pseudorapidity coordinates spaces).
 * **Optimization**: Fast Plotly `restyle` method updates data arrays in-place, preventing complete canvas re-renders during slider drag actions.
 
-### 5. Heavy-Ion Collision Stages (`collision_animation.html`)
+### 6. Heavy-Ion Collision Stages (`collision_animation.html`)
 * **Complexity**: High (tracks over 1,000 independent nucleon and hadron particles in 2D vector space with momentum trajectories and temperature decay).
 * **Optimization**: Particle pooling: particles are reused from an object pool rather than garbage-collected and re-instantiated, eliminating frame drops.
 * **Frame Rate**: Buttery-smooth 60 FPS under standard conditions.
 
-### 6. TPC Event Display (`event_display.html`)
+### 7. TPC Event Display (`event_display.html`)
 * **Complexity**: High (renders 3D particles, concentric detector geometries, and curved magnetic tracking lines).
 * **Optimization**: Uses Three.js WebGL GPU-accelerated buffers for drawing track cylinders.
 * **Hardware Requirements**: Runs easily on entry-level mobile GPUs.
 
-### 7. Transverse Spectra Builder (`pt_spectrum_builder.html`)
+### 8. Transverse Spectra Builder (`pt_spectrum_builder.html`)
 * **Complexity**: Low (exponential mathematical curves).
 * **Optimization**: Instant Plotly update loops.

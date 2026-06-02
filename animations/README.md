@@ -1,6 +1,6 @@
 # Graduate Physics Animation Suite: Learning Guides
 
-This directory contains **7 interactive HTML5/JavaScript simulators** designed to validate the core physics concepts of Relativistic Heavy-Ion Kinematics and AMPT transport modeling, as detailed in **Chapter 5 of Sahoo's textbook**.
+This directory contains **8 interactive HTML5/JavaScript simulators** designed to validate the core physics concepts of Relativistic Heavy-Ion Kinematics and AMPT transport modeling, as detailed in **Chapter 5 of Sahoo's textbook**.
 
 ---
 
@@ -34,7 +34,17 @@ This directory contains **7 interactive HTML5/JavaScript simulators** designed t
 
 ---
 
-## 🌐 4. Lorentz Boost Demonstrator (dN/dy vs. dN/dη)
+## ⚛ 4. QCD Confinement & Debye Screening Explorer
+* **File**: [04_qcd_confinement_screening.html](04_qcd_confinement_screening.html)
+* **Learning Objective**: Model static Cornell potential, linear quark confinement flux-tube snapping in vacuum, and Debye color screening in a deconfined QGP.
+* **Difficulty**: Advanced
+* **Recommended Run Time**: 4–5 minutes
+* **Key Takeaway**: Vacuum potential $V(r) = -\alpha_s/r + \sigma r$ exhibits linear confinement. Stretching quarks $r \ge 1.5$ fm snaps the tube, generating a new $q\bar{q}$ pair. At high temperatures ($T \ge T_c$), Debye screening shields color charge, causing the potential to flatline asymptotically. The screening length $\lambda_D(T)$ shrinks past quarkonium orbits (Charmonium vs. Bottomonium), smoothly calculating their dissociation probability (Matsui-Satz sequential suppression thermometer).
+* **Reference**: Sahoo Chapter 5.1 & 5.3; Beamer Slide 3.
+
+---
+
+## 🌐 5. Lorentz Boost Demonstrator (dN/dy vs. dN/dη)
 * **File**: [rapidity_boost.html](rapidity_boost.html)
 * **Learning Objective**: Contrast the Lorentz-invariance of rapidity $y$ with the shift and shape-change of pseudorapidity $\eta$ under boosts.
 * **Difficulty**: Intermediate
@@ -44,7 +54,7 @@ This directory contains **7 interactive HTML5/JavaScript simulators** designed t
 
 ---
 
-## 💥 5. Heavy-Ion Collision Stages
+## 💥 6. Heavy-Ion Collision Stages
 * **File**: [collision_animation.html](collision_animation.html)
 * **Learning Objective**: Chronologically trace the 5 dynamical epochs of a heavy-ion collision from initial Lorentz-contracted nuclei to final-state freeze-out.
 * **Difficulty**: Advanced
@@ -54,7 +64,7 @@ This directory contains **7 interactive HTML5/JavaScript simulators** designed t
 
 ---
 
-## 🧲 6. Time Projection Chamber (TPC) Event Display
+## 🧲 7. Time Projection Chamber (TPC) Event Display
 * **File**: [event_display.html](event_display.html)
 * **Learning Objective**: Visualize charged hadron tracking, momentum measurement from helical gas ionization curvature, and PID via Time-of-Flight or RICH.
 * **Difficulty**: Intermediate
@@ -64,7 +74,7 @@ This directory contains **7 interactive HTML5/JavaScript simulators** designed t
 
 ---
 
-## 📊 7. Transverse Spectra Builder
+## 📊 8. Transverse Spectra Builder
 * **File**: [pt_spectrum_builder.html](pt_spectrum_builder.html)
 * **Learning Objective**: Model thermal transverse momentum $p_T$ spectra and extract freeze-out temperatures using exponential fits.
 * **Difficulty**: Beginner
