@@ -573,59 +573,95 @@
         function updatePlots() {
             const y_boosted_arr = [];
             const eta_boosted_arr = [];
+            const y_cms_arr = [];
+            const eta_cms_arr = [];
 
-            // Calculate boosted values for all particles
+            // Calculate boosted values and CMS reference values (yb = 0)
             particles.forEach(p => {
-                const b = calculateBoostedKinematics(p, yb);
-                y_boosted_arr.push(b.y_boosted);
-                eta_boosted_arr.push(b.eta_boosted);
+                const bBoost = calculateBoostedKinematics(p, yb);
+                y_boosted_arr.push(bBoost.y_boosted);
+                eta_boosted_arr.push(bBoost.eta_boosted);
+
+                const bCms = calculateBoostedKinematics(p, 0.0);
+                y_cms_arr.push(bCms.y_boosted);
+                eta_cms_arr.push(bCms.eta_boosted);
             });
 
             // Plot 1: dN/dy'
             const yBins = np_histogram_centers_counts(y_boosted_arr, -4.5, 4.5, 30);
+            const yCmsBins = np_histogram_centers_counts(y_cms_arr, -4.5, 4.5, 30);
             
             const traceY = {
                 x: yBins.centers,
                 y: yBins.counts,
                 type: 'bar',
-                name: "dN/dy'",
-                marker: { color: 'rgba(239, 68, 68, 0.75)', line: { color: '#ef4444', width: 1 } }
+                name: "Current Frame (y')",
+                opacity: 0.85,
+                marker: { color: '#ef4444', line: { color: '#ef4444', width: 1 } }
+            };
+
+            const traceYCms = {
+                x: yCmsBins.centers,
+                y: yCmsBins.counts,
+                type: 'bar',
+                name: "CMS Reference (y)",
+                opacity: 0.35,
+                marker: { color: '#cbd5e1', line: { color: '#cbd5e1', width: 1 } }
             };
 
             const layoutY = {
                 paper_bgcolor: 'rgba(0,0,0,0)',
                 plot_bgcolor: 'rgba(0,0,0,0)',
                 template: 'plotly_dark',
+                barmode: 'overlay',
                 margin: { t: 10, b: 30, l: 40, r: 15 },
-                xaxis: { title: "Rapidity y'", gridcolor: '#1e293b', linecolor: '#334155', range: [-4.5, 4.5] },
+                xaxis: { title: "Rapidity", gridcolor: '#1e293b', linecolor: '#334155', range: [-4.5, 4.5] },
                 yaxis: { title: 'Counts', gridcolor: '#1e293b', linecolor: '#334155', range: [0, 18] },
-                showlegend: false
+                showlegend: true,
+                legend: { x: 0.02, y: 0.98, font: { size: 9 }, bgcolor: 'rgba(15,23,42,0.6)' }
             };
 
-            Plotly.newPlot('yPlot', [traceY], layoutY, { responsive: true, displayModeBar: false });
+            if (typeof Plotly !== 'undefined') {
+                Plotly.newPlot('yPlot', [traceY, traceYCms], layoutY, { responsive: true, displayModeBar: false });
+            }
 
             // Plot 2: dN/deta'
             const etaBins = np_histogram_centers_counts(eta_boosted_arr, -4.5, 4.5, 30);
+            const etaCmsBins = np_histogram_centers_counts(eta_cms_arr, -4.5, 4.5, 30);
 
             const traceEta = {
                 x: etaBins.centers,
                 y: etaBins.counts,
                 type: 'bar',
-                name: "dN/dη'",
-                marker: { color: 'rgba(56, 189, 248, 0.75)', line: { color: '#38bdf8', width: 1 } }
+                name: "Current Frame (η')",
+                opacity: 0.85,
+                marker: { color: '#38bdf8', line: { color: '#38bdf8', width: 1 } }
+            };
+
+            const traceEtaCms = {
+                x: etaCmsBins.centers,
+                y: etaCmsBins.counts,
+                type: 'bar',
+                name: "CMS Reference (η)",
+                opacity: 0.35,
+                marker: { color: '#cbd5e1', line: { color: '#cbd5e1', width: 1 } }
             };
 
             const layoutEta = {
                 paper_bgcolor: 'rgba(0,0,0,0)',
                 plot_bgcolor: 'rgba(0,0,0,0)',
                 template: 'plotly_dark',
+                barmode: 'overlay',
                 margin: { t: 10, b: 30, l: 40, r: 15 },
-                xaxis: { title: "Pseudorapidity η'", gridcolor: '#1e293b', linecolor: '#334155', range: [-4.5, 4.5] },
+                xaxis: { title: "Pseudorapidity", gridcolor: '#1e293b', linecolor: '#334155', range: [-4.5, 4.5] },
                 yaxis: { title: 'Counts', gridcolor: '#1e293b', linecolor: '#334155', range: [0, 18] },
-                showlegend: false
+                showlegend: true,
+                legend: { x: 0.02, y: 0.98, font: { size: 9 }, bgcolor: 'rgba(15,23,42,0.6)' }
             };
 
-            Plotly.newPlot('etaPlot', [traceEta], layoutEta, { responsive: true, displayModeBar: false });
+            if (typeof Plotly !== 'undefined') {
+                Plotly.newPlot('etaPlot', [traceEta, traceEtaCms], layoutEta, { responsive: true, displayModeBar: false });
+            }
         }
 
         // Helper to mimic NumPy histogram

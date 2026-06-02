@@ -624,7 +624,9 @@
                 showlegend: false
             };
 
-            Plotly.newPlot('jacobianPlot', [traceJLine, traceJDot], layoutJ, { responsive: true, displayModeBar: false });
+            if (typeof Plotly !== 'undefined') {
+                Plotly.newPlot('jacobianPlot', [traceJLine, traceJDot], layoutJ, { responsive: true, displayModeBar: false });
+            }
 
             // Plot 2: dN/dy vs dN/deta distributions
             // We assume dN/dy is a smooth Gaussian: dN/dy = N0 * exp(-y^2 / 2σ_y^2)
@@ -696,7 +698,9 @@
                 legend: { x: 0.02, y: 0.98, font: { size: 9 }, bg: 'rgba(0,0,0,0)' }
             };
 
-            Plotly.newPlot('densityPlot', [tracedNdy, tracedNdeta, traceCurrentEtaDot], layoutD, { responsive: true, displayModeBar: false });
+            if (typeof Plotly !== 'undefined') {
+                Plotly.newPlot('densityPlot', [tracedNdy, tracedNdeta, traceCurrentEtaDot], layoutD, { responsive: true, displayModeBar: false });
+            }
         }
 
         function updateSimulation() {
