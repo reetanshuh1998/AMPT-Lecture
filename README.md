@@ -33,11 +33,13 @@ jupyter notebook exercises/day01_hands_on.ipynb
 ---
 
 ## 🎨 Interactive HTML5/JS Physics Simulators
-The course includes **4 fully functional, interactive animations** located in the `animations/` folder. They can be opened in any web browser instantly to dynamically explore relativistic kinematics:
+The course includes **6 fully functional, interactive animations** located in the `animations/` folder. They can be opened in any web browser instantly to dynamically explore relativistic kinematics:
 
+*   🌐 **[Velocity Saturation Comparison](file:///home/reet/AMPT-Lecture/animations/01_velocity_saturation_comparison.html)** — Classical vs. Relativistic velocity addition: see why successive boosts saturate at $c$, validating Day 1 Laboratory Problem 1.
+*   🌐 **[Spacetime Minkowski Diagram](file:///home/reet/AMPT-Lecture/animations/02_spacetime_minkowski_diagram.html)** — Interactive Lorentz boosts: watch hyperbolic axis rotations, moving grids skewing, and toggle the Simultaneity Demo!
 *   🌐 **[Collision Kinematics](file:///home/reet/AMPT-Lecture/animations/collision_animation.html)** — Run colliding beams and target nuclei to observe fixed-target center-of-mass energy limits vs. collider linear advantages.
 *   🌐 **[Lorentz Boost Demonstrator](file:///home/reet/AMPT-Lecture/animations/rapidity_boost.html)** — Dynamically apply collinear boosts to observe relativistic velocity addition saturation at $c$ while rapidity adds linearly.
-*   🌐 **[TPC event display](file:///home/reet/AMPT-Lecture/animations/event_display.html)** — A interactive 3D event tracker simulating charged hadron curvature inside a Time Projection Chamber under high magnetic fields.
+*   🌐 **[TPC event display](file:///home/reet/AMPT-Lecture/animations/event_display.html)** — An interactive 3D event tracker simulating charged hadron curvature inside a Time Projection Chamber under high magnetic fields.
 *   🌐 **[Transverse Spectra Builder](file:///home/reet/AMPT-Lecture/animations/pt_spectrum_builder.html)** — Interactively adjust slope parameters to fit exponential thermal transverse mass $m_T$ distributions.
 
 ---

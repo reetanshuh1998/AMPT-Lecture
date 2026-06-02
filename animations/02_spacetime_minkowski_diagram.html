@@ -50,6 +50,9 @@
             background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(6, 182, 212, 0.15) 100%);
             border: 1px solid rgba(99, 102, 241, 0.2);
             text-align: left;
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 12px;
         }
         .header-panel h1 {
             font-size: 28px;
@@ -179,6 +182,7 @@
             background: rgba(99, 102, 241, 0.05);
             padding: 16px;
             border-radius: 0 12px 12px 0;
+            transition: all 0.3s ease;
         }
         .info-panel h3 {
             font-size: 15px;
@@ -218,7 +222,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            margin: 16px 0;
+            margin: 16px 0 8px 0;
             font-size: 13px;
             color: #94a3b8;
             font-family: 'JetBrains Mono', monospace;
@@ -244,12 +248,29 @@
             50% { transform: scale(1.2); opacity: 1; }
             100% { transform: scale(0.9); opacity: 0.6; }
         }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 14px;
+            color: #cbd5e1;
+            user-select: none;
+            width: fit-content;
+        }
+        .checkbox-container input {
+            width: 18px;
+            height: 18px;
+            accent-color: #22d3ee;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="panel">
-            <div class="panel header-panel" style="margin-bottom: 20px; padding: 20px;">
+            <div class="header-panel">
                 <h1>📐 Minkowski Spacetime Simulator</h1>
                 <p>Interactive textbook physics visualization validating Chapter 5 of Relativistic Kinematics (Sahoo): Lorentz Boost Transformations, Hyperbolic Coordinate Skewing, and Invariant Hyperbolas.</p>
             </div>
@@ -278,15 +299,26 @@
                 <button class="btn-reset" onclick="resetBoost()"><span>🔄</span> Reset</button>
             </div>
 
+            <label class="checkbox-container">
+                <input type="checkbox" id="simultaneityToggle" onchange="toggleSimultaneity(this.checked)">
+                Show Relativity of Simultaneity Demo
+            </label>
+
             <div class="status-container">
                 <div class="status-dot" id="statusDot"></div>
                 <span id="statusText">SIMULATION IDLE</span>
+            </div>
+
+            <div id="simultaneityBox" class="info-panel" style="border-left-color: #f59e0b; background: rgba(245, 158, 11, 0.05); display: none; margin-top: 10px;">
+                <h3 style="color: #fca5a5;">Relativity of Simultaneity:</h3>
+                <p id="simultaneityText" style="font-size: 13px; color: #cbd5e1; line-height: 1.6;"></p>
             </div>
 
             <div class="info-panel">
                 <h3>Lorentz Transformations & Minkowski Space:</h3>
                 <ul>
                     <li>Notice how the boosted coordinate axes <code class="code-highlight">x'</code> and time axes <code class="code-highlight">ct'</code> <strong>skew symmetrically</strong> towards the invariant light cone (<code class="code-highlight">&beta; = 1</code>) as velocity increases.</li>
+                    <li>The faint cyan lines represent the **moving coordinate grid** of constant $x'$ and $ct'$. Watch how the grid skews and compresses as $\beta$ increases.</li>
                     <li>The <strong>light cone boundaries</strong> (<code class="code-highlight">x = ±ct</code>) remain absolutely invariant in all reference frames, reflecting the constancy of the speed of light.</li>
                     <li>This Lorentz coordinate axis transformation represents a <strong>hyperbolic rotation</strong> in Minkowski space, contrasting with standard trigonometric rotations in Euclidean space.</li>
                     <li>The purple dotted calibration curves trace <strong>invariant spacetime intervals</strong> (<code class="code-highlight">x² - c²t² = 1</code>), illustrating how coordinate axes stretch under Lorentz transformations.</li>
@@ -305,6 +337,13 @@
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
         const scale = 110;  // pixels per unit
+
+        let isAnimating = false;
+        let isPaused = false;
+        let animationInterval = null;
+        let beta = 0;
+        let speedMult = 1.0;
+        let showSimultaneity = false;
 
         function drawSpacetimeDiagram(beta) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -376,9 +415,40 @@
             ctx.lineTo(centerX, centerY + 2.5*scale);
             ctx.stroke();
 
+            const gamma = 1 / Math.sqrt(Math.max(1 - beta**2, 0.0001));
+
+            // Boosted coordinate grid (constant x' and ct' gridlines)
+            if (beta > 0.01) {
+                ctx.strokeStyle = 'rgba(34, 211, 238, 0.12)'; // Subtle glowing cyan
+                ctx.lineWidth = 1;
+                
+                // Draw constant x' lines (parallel to ct'-axis)
+                for (let i = -3; i <= 3; i++) {
+                    ctx.beginPath();
+                    for (let ctp = -2.5; ctp <= 2.5; ctp += 0.1) {
+                        let x = gamma * (i + beta * ctp);
+                        let ct = gamma * (ctp + beta * i);
+                        if (ctp === -2.5) ctx.moveTo(centerX + x*scale, centerY - ct*scale);
+                        else ctx.lineTo(centerX + x*scale, centerY - ct*scale);
+                    }
+                    ctx.stroke();
+                }
+
+                // Draw constant ct' lines (parallel to x'-axis)
+                for (let i = -3; i <= 3; i++) {
+                    ctx.beginPath();
+                    for (let xp = -2.5; xp <= 2.5; xp += 0.1) {
+                        let x = gamma * (xp + beta * i);
+                        let ct = gamma * (i + beta * xp);
+                        if (xp === -2.5) ctx.moveTo(centerX + x*scale, centerY - ct*scale);
+                        else ctx.lineTo(centerX + x*scale, centerY - ct*scale);
+                    }
+                    ctx.stroke();
+                }
+            }
+
             // Boosted frame axes (vibrant cyan)
             if (beta > 0.01) {
-                const gamma = 1 / Math.sqrt(1 - beta**2);
                 ctx.strokeStyle = '#22d3ee';
                 ctx.lineWidth = 2.5;
 
@@ -418,6 +488,70 @@
                 ctx.setLineDash([]);
             }
 
+            // Simultaneity demo
+            if (showSimultaneity) {
+                // Event A (Left)
+                const xA = -1.2, ctA = 1.0;
+                // Event B (Right)
+                const xB = 1.2, ctB = 1.0;
+                
+                // Boosted coordinates
+                const ctAp = gamma * (ctA - beta * xA);
+                const xAp = gamma * (xA - beta * ctA);
+
+                const ctBp = gamma * (ctB - beta * xB);
+                const xBp = gamma * (xB - beta * ctB);
+
+                // Draw events on Canvas
+                ctx.fillStyle = '#f59e0b'; // Amber event dots
+                ctx.beginPath();
+                ctx.arc(centerX + xA*scale, centerY - ctA*scale, 7, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(centerX + xB*scale, centerY - ctB*scale, 7, 0, 2*Math.PI);
+                ctx.fill();
+
+                // Dotted simultaneity lines (constant ct') passing through events A & B
+                ctx.strokeStyle = 'rgba(245, 158, 11, 0.5)';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([3, 3]);
+
+                // Simultaneity line A
+                ctx.beginPath();
+                for (let xp = -2.5; xp <= 2.5; xp += 0.2) {
+                    let x = gamma * (xp + beta * ctAp);
+                    let ct = gamma * (ctAp + beta * xp);
+                    if (xp === -2.5) ctx.moveTo(centerX + x*scale, centerY - ct*scale);
+                    else ctx.lineTo(centerX + x*scale, centerY - ct*scale);
+                }
+                ctx.stroke();
+
+                // Simultaneity line B
+                ctx.beginPath();
+                for (let xp = -2.5; xp <= 2.5; xp += 0.2) {
+                    let x = gamma * (xp + beta * ctBp);
+                    let ct = gamma * (ctBp + beta * xp);
+                    if (xp === -2.5) ctx.moveTo(centerX + x*scale, centerY - ct*scale);
+                    else ctx.lineTo(centerX + x*scale, centerY - ct*scale);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Labels for Events
+                ctx.fillStyle = '#f59e0b';
+                ctx.font = 'bold 11px JetBrains Mono, monospace';
+                ctx.fillText(`A: (x'=${xAp.toFixed(2)}, ct'=${ctAp.toFixed(2)})`, centerX + xA*scale - 75, centerY - ctA*scale - 12);
+                ctx.fillText(`B: (x'=${xBp.toFixed(2)}, ct'=${ctBp.toFixed(2)})`, centerX + xB*scale - 75, centerY - ctB*scale - 12);
+
+                // Show comparative explanation in details panel
+                let statusText = `In the rest frame, events A and B are **simultaneous** (both occur at $ct = 1.0$). <br>
+                Under a boost of $\\beta = ${beta.toFixed(2)}$, their time coordinates in the moving frame split:<br>
+                • Event **B** occurs at $ct' = ${ctBp.toFixed(2)}$<br>
+                • Event **A** occurs at $ct' = ${ctAp.toFixed(2)}$<br>
+                Since $ct'_B < ct'_A$, **observer B sees Event B happen before Event A!** This demonstrates the **Relativity of Simultaneity** caused by the skewing of the time slices.`;
+                document.getElementById('simultaneityText').innerHTML = statusText;
+            }
+
             // Labels with modern Outfit layout
             ctx.fillStyle = '#cbd5e1';
             ctx.font = 'bold 14px Outfit, sans-serif';
@@ -444,7 +578,6 @@
 
             ctx.fillStyle = '#f8fafc';
             ctx.font = '13px "JetBrains Mono", monospace';
-            const gamma = 1 / Math.sqrt(Math.max(1 - beta**2, 0.0001));
             ctx.fillText(`Beam Velocity β = ${beta.toFixed(3)}`, 25, 35);
             ctx.fillText(`Lorentz Factor γ = ${gamma.toFixed(4)}`, 25, 55);
             if (beta > 0.01) {
@@ -463,15 +596,15 @@
             drawSpacetimeDiagram(b);
         }
 
-        let isAnimating = false;
-        let isPaused = false;
-        let animationInterval = null;
-        let beta = 0;
-        let speedMult = 1.0;
-
         function updateSpeed(val) {
             speedMult = parseFloat(val);
             document.getElementById('speedDisplay').textContent = speedMult.toFixed(1);
+        }
+
+        function toggleSimultaneity(checked) {
+            showSimultaneity = checked;
+            document.getElementById('simultaneityBox').style.display = checked ? 'block' : 'none';
+            drawSpacetimeDiagram(beta);
         }
 
         function updateStatus(state) {
