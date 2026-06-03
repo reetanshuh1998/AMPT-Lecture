@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 2: Collision Centrality & Pseudorapidity Explorer</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0b0f19;
+            color: #f8fafc;
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 1300px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            margin-top: 20px;
+        }
+        @media (min-width: 950px) {
+            .container {
+                grid-template-columns: 0.85fr 1.15fr;
+            }
+        }
+        .panel {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+        }
+        .header-panel {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            text-align: left;
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 12px;
+        }
+        .header-panel h1 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(to right, #cbd5e1, #10b981, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        .header-panel p {
+            color: #94a3b8;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .control-group {
+            margin-bottom: 20px;
+        }
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #cbd5e1;
+        }
+        .control-label span.value {
+            font-family: 'JetBrains Mono', monospace;
+            color: #10b981;
+            font-weight: 700;
+            font-size: 16px;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #1e293b;
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #10b981;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            transition: transform 0.1s, background-color 0.1s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+            background: #6366f1;
+        }
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        button.preset-btn {
+            background: rgba(255, 255, 255, 0.05);
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 8px 4px;
+            font-size: 11px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        button.preset-btn:hover, button.preset-btn.active {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border-color: #10b981;
+            transform: translateY(-1px);
+        }
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button.action-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: none;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+            transform: translateY(-1px);
+        }
+        .btn-pause {
+            background: #d97706;
+            color: white;
+            box-shadow: 0 4px 14px rgba(217, 119, 6, 0.3);
+        }
+        .btn-pause:hover:not(:disabled) {
+            background: #f59e0b;
+            transform: translateY(-1px);
+        }
+        .btn-pause:disabled {
+            background: #334155;
+            color: #64748b;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        .btn-reset {
+            background: #475569;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-reset:hover {
+            background: #64748b;
+            transform: translateY(-1px);
+        }
+        .status-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 8px 0 16px 0;
+            font-size: 13px;
+            color: #94a3b8;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #475569;
+            transition: all 0.3s ease;
+        }
+        .status-dot.active {
+            background-color: #10b981;
+            box-shadow: 0 0 10px #10b981;
+            animation: sweep-pulse 1.5s infinite;
+        }
+        .status-dot.paused {
+            background-color: #f59e0b;
+            box-shadow: 0 0 10px #f59e0b;
+        }
+        @keyframes sweep-pulse {
+            0% { transform: scale(0.9); opacity: 0.6; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0.6; }
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+        .metric-card h4 {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+        }
+        .metric-card p {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            color: #10b981;
+        }
+        .metric-card.highlight {
+            grid-column: span 2;
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            background: rgba(16, 185, 129, 0.03);
+        }
+        .metric-card.highlight p {
+            color: #10b981;
+            font-size: 16px;
+        }
+        .info-panel {
+            margin-top: 20px;
+            border-left: 4px solid #10b981;
+            background: rgba(16, 185, 129, 0.05);
+            padding: 16px;
+            border-radius: 0 12px 12px 0;
+        }
+        .info-panel h3 {
+            font-size: 15px;
+            color: #10b981;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .info-panel ul {
+            list-style-type: none;
+            font-size: 13px;
+            color: #cbd5e1;
+            line-height: 1.6;
+        }
+        .info-panel li {
+            margin-bottom: 6px;
+            position: relative;
+            padding-left: 18px;
+        }
+        .info-panel li::before {
+            content: "•";
+            color: #10b981;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            font-size: 18px;
+            top: -2px;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+        .visual-card {
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        .visual-card h3 {
+            font-size: 15px;
+            color: #a5b4fc;
+            margin-bottom: 12px;
+            align-self: flex-start;
+            font-weight: 600;
+            border-left: 3px solid #10b981;
+            padding-left: 8px;
+        }
+        .canvas-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            width: 100%;
+        }
+        @media (min-width: 600px) {
+            .canvas-row {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        canvas {
+            background: #090d16;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Control Panel -->
+        <div class="panel">
+            <div class="header-panel">
+                <h1>🌐 Collision Centrality & Rapidity Explorer</h1>
+                <p>Day 2 Masterclass: Study the physics of nuclear collision geometry. Sweep the impact parameter slider to watch the overlapping participant region contract, and observe how the pseudorapidity multiplicity distribution ($dN_{ch}/d\eta$) scales with participating nucleons ($N_{\mathrm{part}}$) and binary collisions ($N_{\mathrm{coll}}$) in Pb-Pb at 5.02 TeV.</p>
+            </div>
+
+            <!-- Frame presets -->
+            <div class="control-group">
+                <label class="control-label">Standard Geometry Presets</label>
+                <div class="preset-grid">
+                    <button class="preset-btn active" id="btn-central" onclick="setPresetCentrality(1.5)">Central (0-5%)</button>
+                    <button class="preset-btn" id="btn-mid" onclick="setPresetCentrality(7.5)">Mid-Central (30-40%)</button>
+                    <button class="preset-btn" id="btn-peripheral" onclick="setPresetCentrality(12.0)">Peripheral (70-80%)</button>
+                </div>
+            </div>
+
+            <!-- Impact parameter slider -->
+            <div class="control-group">
+                <div class="control-label">
+                    <label for="bSlider">Impact Parameter (b)</label>
+                    <span class="value" id="bDisplay">1.50 fm</span>
+                </div>
+                <input type="range" id="bSlider" min="0.0" max="15.0" step="0.1" value="1.5"
+                       oninput="manualUpdateB(this.value)">
+            </div>
+
+            <!-- Animation Controls -->
+            <div class="button-group">
+                <button id="btn-animate" class="action-btn btn-primary" onclick="toggleAnimation()"><span>▶</span> Play Centrality Scan</button>
+                <button id="btn-pause" class="action-btn btn-pause" onclick="togglePause()" disabled><span>⏸</span> Pause</button>
+                <button class="action-btn btn-reset" onclick="resetExplorer()"><span>🔄</span> Reset</button>
+            </div>
+
+            <div class="control-group" style="margin-top: 5px;">
+                <label for="speedSelect" class="control-label" style="margin-bottom: 6px;">Sweep Speed</label>
+                <select id="speedSelect" onchange="updateSpeed(this.value)" style="width: 100%; padding: 10px 14px; background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #f8fafc; font-family: 'Outfit', sans-serif; font-size: 13px; outline: none; cursor: pointer;">
+                    <option value="0.5">0.5x Speed (Slow Sweep)</option>
+                    <option value="1" selected>1.0x Speed (Normal Sweep)</option>
+                    <option value="2">2.0x Speed (Fast Sweep)</option>
+                </select>
+            </div>
+
+            <div class="status-container">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">SCAN IDLE</span>
+            </div>
+
+            <!-- Live Metrics -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h4>Centrality Class</h4>
+                    <p id="metric-class" style="color: #fbbf24;">0-5% (Most Central)</p>
+                </div>
+                <div class="metric-card">
+                    <h4>Overlap Area</h4>
+                    <p id="metric-area">143.1 fm²</p>
+                </div>
+                <div class="metric-card">
+                    <h4>Participants (N<sub>part</sub>)</h4>
+                    <p id="metric-npart" style="color: #34d399;">397</p>
+                </div>
+                <div class="metric-card">
+                    <h4>Spectators (N<sub>spec</sub>)</h4>
+                    <p id="metric-nspec" style="color: #f87171;">19</p>
+                </div>
+                <div class="metric-card highlight">
+                    <h4>Binary Collisions (N<sub>coll</sub>)</h4>
+                    <p id="metric-ncoll">N<sub>coll</sub> = 1820 (Strong Hard Scaling)</p>
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <h3>Glauber Collision Geometry Insights:</h3>
+                <ul>
+                    <li><strong>Collision Centrality</strong>: Centrality scales geometrically with $b^2$. Small $b$ yields high nucleon overlap and large particle multiplicity ($dN/d\eta$).</li>
+                    <li><strong>Two-Component scaling</strong>: Multiplicity scales as a hybrid mix of soft participant scaling ($N_{\mathrm{part}}$) and hard binary collisions scaling ($N_{\mathrm{coll}}$): $dN_{ch}/d\eta \propto \alpha \frac{N_{\mathrm{part}}}{2} + (1-\alpha) N_{\mathrm{coll}}$.</li>
+                    <li><strong>Spectators vs Participants</strong>: Participating nucleons overlap and produce particles in the detector barrel, while spectators continue along the beam pipe into zero-degree calorimeters (ZDCs).</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Visualization Panel -->
+        <div class="dashboard-grid">
+            <div class="canvas-row">
+                <div class="visual-card">
+                    <h3>⚛ Collision overlap (Transverse view)</h3>
+                    <canvas id="transverseCanvas" width="300" height="300"></canvas>
+                </div>
+                <div class="visual-card">
+                    <h3>⚛ Relativistic Particle Spray (Side view)</h3>
+                    <canvas id="sideCanvas" width="300" height="300"></canvas>
+                </div>
+            </div>
+            <div class="visual-card">
+                <h3>📊 Multiplicity Density (dN<sub>ch</sub>/dη) vs. ALICE Pb-Pb at 5.02 TeV</h3>
+                <div id="centralityPlot" style="width: 100%; height: 260px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const transCanvas = document.getElementById('transverseCanvas');
+        const transCtx = transCanvas.getContext('2d');
+        const sideCanvas = document.getElementById('sideCanvas');
+        const sideCtx = sideCanvas.getContext('2d');
+
+        // Collision constants
+        const R = 7.0; // Radius of Pb nucleus in fm
+        const A_total = 208; // Lead mass number
+
+        // Active State variables
+        let b = 1.5; // fm
+        let animationSpeed = 1.0;
+        let isAnimating = false;
+        let isPaused = false;
+        let animationInterval = null;
+        let bDirection = 1; // 1 = increasing, -1 = decreasing
+
+        function setPresetCentrality(val) {
+            stopAnimation();
+            b = parseFloat(val);
+            document.getElementById('bDisplay').textContent = b.toFixed(2) + ' fm';
+            document.getElementById('bSlider').value = val;
+            
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+            if (val === 1.5) document.getElementById('btn-central').classList.add('active');
+            else if (val === 7.5) document.getElementById('btn-mid').classList.add('active');
+            else if (val === 12.0) document.getElementById('btn-peripheral').classList.add('active');
+            
+            updateSimulation();
+        }
+
+        function manualUpdateB(val) {
+            stopAnimation();
+            b = parseFloat(val);
+            document.getElementById('bDisplay').textContent = b.toFixed(2) + ' fm';
+            
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+            updateSimulation();
+        }
+
+        function calculateGlauber(bVal) {
+            // Overlap area of two identical circles of radius R offset by distance b
+            let overlapArea = 0.0;
+            if (bVal < 2 * R) {
+                overlapArea = 2 * R * R * Math.acos(bVal / (2 * R)) - bVal * Math.sqrt(R * R - (bVal * bVal) / 4.0);
+            }
+            
+            // Glauber Pb-Pb fit parameterizations at 5.02 TeV
+            const npart = Math.round(416 * Math.pow(1.0 - Math.pow(bVal / 14.0, 1.8), 2.5));
+            const ncoll = Math.round(2000 * Math.pow(1.0 - Math.pow(bVal / 14.0, 1.6), 3.5));
+            const nspec = Math.max(0, 416 - npart);
+            
+            const centralityPct = (bVal / 14.0) * (bVal / 14.0) * 100;
+            
+            let centralityClass = "90-100%";
+            let classColor = "#f472b6";
+            if (centralityPct <= 5) { centralityClass = "0-5%"; classColor = "#fbbf24"; }
+            else if (centralityPct <= 10) { centralityClass = "5-10%"; classColor = "#f59e0b"; }
+            else if (centralityPct <= 20) { centralityClass = "10-20%"; classColor = "#e11d48"; }
+            else if (centralityPct <= 30) { centralityClass = "20-30%"; classColor = "#ef4444"; }
+            else if (centralityPct <= 40) { centralityClass = "30-40%"; classColor = "#a855f7"; }
+            else if (centralityPct <= 50) { centralityClass = "40-50%"; classColor = "#818cf8"; }
+            else if (centralityPct <= 60) { centralityClass = "50-60%"; classColor = "#6366f1"; }
+            else if (centralityPct <= 70) { centralityClass = "60-70%"; classColor = "#06b6d4"; }
+            else if (centralityPct <= 80) { centralityClass = "70-80%"; classColor = "#10b981"; }
+            else if (centralityPct <= 90) { centralityClass = "80-90%"; classColor = "#34d399"; }
+
+            return { overlapArea, npart, ncoll, nspec, centralityPct, centralityClass, classColor };
+        }
+
+        function drawTransverse(glauber) {
+            transCtx.clearRect(0, 0, transCanvas.width, transCanvas.height);
+            transCtx.fillStyle = '#090d16';
+            transCtx.fillRect(0, 0, transCanvas.width, transCanvas.height);
+
+            const cX = transCanvas.width / 2;
+            const cY = transCanvas.height / 2;
+            const scale = 11; // pixels per fm
+
+            // Draw spectator projectile (Left)
+            const xL = cX - (b / 2) * scale;
+            transCtx.strokeStyle = 'rgba(99, 102, 241, 0.4)';
+            transCtx.lineWidth = 1;
+            transCtx.fillStyle = 'rgba(99, 102, 241, 0.15)';
+            transCtx.beginPath();
+            transCtx.arc(xL, cY, R * scale, 0, 2 * Math.PI);
+            transCtx.fill();
+            transCtx.stroke();
+
+            // Draw spectator target (Right)
+            const xR = cX + (b / 2) * scale;
+            transCtx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+            transCtx.lineWidth = 1;
+            transCtx.fillStyle = 'rgba(239, 68, 68, 0.15)';
+            transCtx.beginPath();
+            transCtx.arc(xR, cY, R * scale, 0, 2 * Math.PI);
+            transCtx.fill();
+            transCtx.stroke();
+
+            // Draw Overlapping Participant Region via clip mask
+            if (b < 2 * R) {
+                transCtx.save();
+                
+                // Create clipping region of left circle
+                transCtx.beginPath();
+                transCtx.arc(xL, cY, R * scale, 0, 2 * Math.PI);
+                transCtx.clip();
+
+                // Draw right circle overlapping inside the clipped region
+                transCtx.fillStyle = 'rgba(251, 191, 36, 0.7)'; // glowing gold overlap
+                transCtx.beginPath();
+                transCtx.arc(xR, cY, R * scale, 0, 2 * Math.PI);
+                transCtx.fill();
+
+                transCtx.restore();
+            }
+
+            // Draw Center coordinates indicators
+            transCtx.fillStyle = '#94a3b8';
+            transCtx.font = '10px JetBrains Mono, monospace';
+            transCtx.fillText(`b = ${b.toFixed(1)} fm`, cX - 25, 20);
+
+            // Draw impact parameter vector arrow
+            transCtx.strokeStyle = '#fbbf24';
+            transCtx.lineWidth = 2;
+            transCtx.beginPath();
+            transCtx.moveTo(xL, cY);
+            transCtx.lineTo(xR, cY);
+            transCtx.stroke();
+
+            // Tiny center dots
+            transCtx.fillStyle = '#ffffff';
+            transCtx.beginPath(); transCtx.arc(xL, cY, 3, 0, 2*Math.PI); transCtx.fill();
+            transCtx.beginPath(); transCtx.arc(xR, cY, 3, 0, 2*Math.PI); transCtx.fill();
+        }
+
+        function drawSide(glauber) {
+            sideCtx.clearRect(0, 0, sideCanvas.width, sideCanvas.height);
+            sideCtx.fillStyle = '#090d16';
+            sideCtx.fillRect(0, 0, sideCanvas.width, sideCanvas.height);
+
+            const cX = sideCanvas.width / 2;
+            const cY = sideCanvas.height / 2;
+
+            // Draw Lorentz-contracted incoming nuclei (side view: flattened ovals)
+            const thickness = 4;
+            const radius = 60;
+
+            // Projectile nucleus moving right
+            sideCtx.fillStyle = 'rgba(99, 102, 241, 0.4)';
+            sideCtx.beginPath();
+            sideCtx.ellipse(cX - 20, cY, thickness, radius, 0, 0, 2 * Math.PI);
+            sideCtx.fill();
+
+            // Target nucleus moving left
+            sideCtx.fillStyle = 'rgba(239, 68, 68, 0.4)';
+            sideCtx.beginPath();
+            sideCtx.ellipse(cX + 20, cY, thickness, radius, 0, 0, 2 * Math.PI);
+            sideCtx.fill();
+
+            // Outgoing particle sprays
+            // The number of tracks scales with Npart
+            const numTracks = Math.round(glauber.npart / 2);
+            if (numTracks > 0) {
+                // Seed random state
+                let localSeed = 54321;
+                function localRandom() {
+                    let x = Math.sin(localSeed++) * 10000;
+                    return x - Math.floor(x);
+                }
+
+                for (let i = 0; i < numTracks; i++) {
+                    const theta = localRandom() * Math.PI; // angular distribution
+                    const length = 40 + localRandom() * 60;
+                    const directionX = Math.cos(theta);
+                    const directionY = Math.sin(theta) * ((localRandom() > 0.5) ? 1 : -1);
+
+                    // Track vector lines starting from vertex (cX, cY)
+                    sideCtx.strokeStyle = 'rgba(251, 191, 36, 0.4)';
+                    sideCtx.lineWidth = 1;
+                    sideCtx.beginPath();
+                    sideCtx.moveTo(cX, cY);
+                    sideCtx.lineTo(cX + directionX * length, cY + directionY * length);
+                    sideCtx.stroke();
+                }
+
+                // Draw central collision vertex glowing halo
+                const pulseSize = 10 + (glauber.npart / 416) * 20;
+                const grad = sideCtx.createRadialGradient(cX, cY, 0, cX, cY, pulseSize);
+                grad.addColorStop(0, '#ffffff');
+                grad.addColorStop(0.3, 'rgba(251, 191, 36, 0.8)');
+                grad.addColorStop(1, 'rgba(251, 191, 36, 0)');
+                sideCtx.fillStyle = grad;
+                sideCtx.beginPath();
+                sideCtx.arc(cX, cY, pulseSize, 0, 2 * Math.PI);
+                sideCtx.fill();
+            }
+
+            sideCtx.fillStyle = '#cbd5e1';
+            sideCtx.font = '10px Outfit, sans-serif';
+            sideCtx.fillText(`Outgoing Multiplicity ~ ${Math.round(glauber.npart * 4.8)}`, 10, 20);
+        }
+
+        // ALICE Pb-Pb 5.02 TeV centrality class curves mapping
+        function getDNDeta(eta, impactB) {
+            const glauber = calculateGlauber(impactB);
+            
+            // Two-component model parameterization: peak yield
+            let yieldMid = 2.4 * glauber.npart + 0.55 * glauber.ncoll;
+            if (yieldMid < 0) yieldMid = 0;
+            
+            // Smooth skin correction for large impact parameter
+            if (impactB > 13.0 && impactB < 14.0) {
+                yieldMid = Math.max(yieldMid, 30 * (14.0 - impactB));
+            } else if (impactB >= 14.0) {
+                yieldMid = 0;
+            }
+
+            // Mapped pseudorapidity shape parameterization
+            return yieldMid / (1.0 + Math.exp((Math.abs(eta) - 3.8) / 0.8));
+        }
+
+        function updatePlots(glauber) {
+            const etaArr = [];
+            const currentYield = [];
+
+            // Reference centrality parameters [b, label, color]
+            const references = [
+                { b: 1.5, label: '0-5% (Central)', color: '#fbbf24', dash: 'dash' },
+                { b: 5.3, label: '10-20%', color: '#e11d48', dash: 'dash' },
+                { b: 8.3, label: '30-40%', color: '#a855f7', dash: 'dash' },
+                { b: 10.3, label: '50-60%', color: '#6366f1', dash: 'dash' },
+                { b: 12.1, label: '70-80% (Peripheral)', color: '#10b981', dash: 'dash' }
+            ];
+
+            const plotTraces = [];
+
+            // 1. Generate reference lines
+            for (let val = -5.5; val <= 5.5; val += 0.25) {
+                etaArr.push(val);
+            }
+
+            references.forEach(ref => {
+                const refYield = [];
+                etaArr.forEach(eta => {
+                    refYield.push(getDNDeta(eta, ref.b));
+                });
+                
+                plotTraces.push({
+                    x: etaArr,
+                    y: refYield,
+                    mode: 'lines',
+                    name: ref.label,
+                    line: { color: ref.color, width: 1.5, dash: 'dot' },
+                    opacity: 0.4
+                });
+            });
+
+            // 2. Generate current line
+            etaArr.forEach(eta => {
+                currentYield.push(getDNDeta(eta, b));
+            });
+
+            plotTraces.push({
+                x: etaArr,
+                y: currentYield,
+                mode: 'lines',
+                name: `Current (b = ${b.toFixed(1)} fm)`,
+                line: { color: '#10b981', width: 4.5 },
+                fill: 'tozeroy',
+                fillcolor: 'rgba(16, 185, 129, 0.08)'
+            });
+
+            const layout = {
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                template: 'plotly_dark',
+                margin: { t: 10, b: 35, l: 45, r: 15 },
+                xaxis: { title: 'Pseudorapidity η', gridcolor: '#1e293b', linecolor: '#334155', range: [-5.5, 5.5] },
+                yaxis: { title: 'dN_{ch}/dη', gridcolor: '#1e293b', linecolor: '#334155', range: [0, 2200] },
+                legend: { x: 0.8, y: 0.95, font: { size: 9 }, bgcolor: 'rgba(15,23,42,0.6)' }
+            };
+
+            if (typeof Plotly !== 'undefined') {
+                Plotly.react('centralityPlot', plotTraces, layout, { responsive: true, displayModeBar: false });
+            }
+        }
+
+        function updateSimulation() {
+            const glauber = calculateGlauber(b);
+
+            // Update Metrics Cards
+            document.getElementById('metric-class').textContent = `${glauber.centralityClass} (Centrality)`;
+            document.getElementById('metric-class').style.color = glauber.classColor;
+            document.getElementById('metric-area').textContent = `${glauber.overlapArea.toFixed(1)} fm²`;
+            document.getElementById('metric-npart').textContent = glauber.npart.toString();
+            document.getElementById('metric-nspec').textContent = glauber.nspec.toString();
+            document.getElementById('metric-ncoll').innerHTML = `N<sub>coll</sub> = ${glauber.ncoll} <span style="font-size:10px; color:#cbd5e1; display:block;">(Binary Collisions)</span>`;
+
+            drawTransverse(glauber);
+            drawSide(glauber);
+            updatePlots(glauber);
+        }
+
+        // Animation loop for centrality scan
+        function toggleAnimation() {
+            if (isAnimating) {
+                stopAnimation();
+            } else {
+                startAnimation();
+            }
+        }
+
+        function startAnimation() {
+            isAnimating = true;
+            isPaused = false;
+            updateStatus('running');
+            document.getElementById('btn-animate').innerHTML = `<span>⏹</span> Stop Scan`;
+            document.getElementById('btn-animate').style.background = "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)";
+            document.getElementById('btn-pause').disabled = false;
+            document.getElementById('btn-pause').innerHTML = `<span>⏸</span> Pause`;
+            document.getElementById('btn-pause').style.background = "#d97706";
+
+            if (animationInterval) clearInterval(animationInterval);
+
+            // We loop impact parameter b between 0.0 and 14.5 fm
+            animationInterval = setInterval(() => {
+                if (isPaused) return;
+
+                let step = 0.1 * animationSpeed;
+                b += step * bDirection;
+
+                if (b >= 14.5) {
+                    b = 14.5;
+                    bDirection = -1;
+                } else if (b <= 0.0) {
+                    b = 0.0;
+                    bDirection = 1;
+                }
+
+                document.getElementById('bSlider').value = b;
+                document.getElementById('bDisplay').textContent = b.toFixed(2) + ' fm';
+                updateSimulation();
+            }, 40);
+        }
+
+        function stopAnimation() {
+            isAnimating = false;
+            isPaused = false;
+            updateStatus('idle');
+            if (animationInterval) clearInterval(animationInterval);
+            document.getElementById('btn-animate').innerHTML = `<span>▶</span> Play Centrality Scan`;
+            document.getElementById('btn-animate').style.background = "linear-gradient(135deg, #10b981 0%, #059669 100%)";
+            document.getElementById('btn-pause').disabled = true;
+            document.getElementById('btn-pause').innerHTML = `<span>⏸</span> Pause`;
+            document.getElementById('btn-pause').style.background = "#334155";
+        }
+
+        function togglePause() {
+            if (!isAnimating) return;
+            isPaused = !isPaused;
+            if (isPaused) {
+                updateStatus('paused');
+                document.getElementById('btn-pause').innerHTML = `<span>▶</span> Resume`;
+                document.getElementById('btn-pause').style.background = "#16a34a";
+            } else {
+                updateStatus('running');
+                document.getElementById('btn-pause').innerHTML = `<span>⏸</span> Pause`;
+                document.getElementById('btn-pause').style.background = "#d97706";
+            }
+        }
+
+        function updateSpeed(val) {
+            animationSpeed = parseFloat(val);
+        }
+
+        function updateStatus(state) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            if (!dot || !text) return;
+            dot.className = 'status-dot';
+            if (state === 'running') {
+                dot.classList.add('active');
+                text.textContent = 'SCAN ACTIVE';
+            } else if (state === 'paused') {
+                dot.classList.add('paused');
+                text.textContent = 'SCAN PAUSED';
+            } else {
+                text.textContent = 'SCAN IDLE';
+            }
+        }
+
+        function resetExplorer() {
+            stopAnimation();
+            b = 1.5;
+            document.getElementById('bSlider').value = b;
+            document.getElementById('bDisplay').textContent = b.toFixed(2) + ' fm';
+            setPresetCentrality(1.5);
+        }
+
+        // Initial setup
+        setPresetCentrality(1.5);
+    </script>
+</body>
+</html>
