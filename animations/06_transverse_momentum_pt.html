@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transverse Momentum pT — Detector Intuition</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #070b16;
+  --surf:     #0f1623;
+  --surf2:    #16202e;
+  --border:   #243044;
+  --text:     #e2e8f0;
+  --muted:    #64748b;
+  --pt:       #f87171;
+  --pz:       #60a5fa;
+  --ptot:     #fbbf24;
+  --track:    #a78bfa;
+  --R:        #34d399;
+  --acc:      #38bdf8;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Inter',sans-serif;
+  min-height:100vh;padding:20px 16px 32px;
+}
+h1{
+  text-align:center;font-size:1.5rem;font-weight:700;
+  background:linear-gradient(135deg,#38bdf8 0%,#818cf8 50%,#f472b6 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:4px;
+}
+.sub{text-align:center;color:var(--muted);font-size:.83rem;margin-bottom:18px;}
+.wrap{max-width:1140px;margin:0 auto;}
+
+/* ─── Canvas row ─── */
+.canvas-row{display:grid;grid-template-columns:1fr 310px;gap:14px;margin-bottom:14px;}
+.panel{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:10px 12px;}
+.panel-title{font-size:.72rem;font-weight:600;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+canvas{display:block;border-radius:8px;}
+
+/* ─── Controls row ─── */
+.ctrl-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.slider-row{display:flex;align-items:center;gap:10px;margin-bottom:13px;}
+.sl-label{font-size:.8rem;min-width:155px;}
+input[type=range]{flex:1;accent-color:var(--acc);cursor:pointer;height:4px;}
+.sl-val{font-family:'JetBrains Mono',monospace;font-size:.8rem;min-width:82px;
+  text-align:right;color:var(--acc);}
+
+/* Presets */
+.presets{display:flex;gap:7px;flex-wrap:wrap;margin-top:4px;}
+.pbtn{
+  padding:5px 11px;border-radius:20px;border:1px solid var(--border);
+  background:var(--surf2);color:var(--text);font-size:.75rem;cursor:pointer;
+  transition:all .2s;
+}
+.pbtn:hover{border-color:var(--acc);color:var(--acc);}
+.pbtn.active{background:var(--acc);color:#000;border-color:var(--acc);}
+
+/* Sweep button */
+.sweep{
+  padding:7px 18px;border-radius:8px;border:1px solid var(--acc);
+  background:transparent;color:var(--acc);font-size:.82rem;cursor:pointer;
+  margin-top:10px;transition:all .2s;
+}
+.sweep:hover,.sweep.on{background:var(--acc);color:#000;}
+
+/* Readout cards */
+.readout-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rcard{
+  background:var(--surf2);border-radius:8px;padding:9px 12px;
+  border-left:3px solid var(--border);
+}
+.rcard.pt {border-left-color:var(--pt);}
+.rcard.pz {border-left-color:var(--pz);}
+.rcard.pp {border-left-color:var(--ptot);}
+.rcard.et {border-left-color:var(--track);}
+.rcard.rv {border-left-color:var(--R);}
+.rcard.th {border-left-color:#fb923c;}
+.rl{font-size:.7rem;color:var(--muted);margin-bottom:2px;}
+.rv-val{font-family:'JetBrains Mono',monospace;font-size:1.05rem;font-weight:600;}
+.rcard.pt .rv-val{color:var(--pt);}
+.rcard.pz .rv-val{color:var(--pz);}
+.rcard.pp .rv-val{color:var(--ptot);}
+.rcard.et .rv-val{color:var(--track);}
+.rcard.rv .rv-val{color:var(--R);}
+.rcard.th .rv-val{color:#fb923c;}
+
+/* Physics note */
+.pnote{
+  max-width:1140px;margin:14px auto 0;
+  background:var(--surf2);border:1px solid var(--border);border-radius:10px;
+  padding:12px 16px;font-size:.79rem;color:var(--muted);line-height:1.7;
+}
+.pnote strong{color:var(--text);}
+.fm{font-family:'JetBrains Mono',monospace;color:var(--acc);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Transverse Momentum <em>p</em><sub>T</sub> — Detector Intuition</h1>
+<p class="sub">Drag the angle slider · watch how the detector measures p<sub>T</sub> via track curvature in the solenoid field</p>
+
+<!-- Canvases -->
+<div class="canvas-row">
+  <div class="panel">
+    <div class="panel-title">Side View — Longitudinal Cross-Section &nbsp;(z–r plane, looking from the side)</div>
+    <canvas id="side"></canvas>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Front View — Transverse Plane &nbsp;(x–y, ⊙ looking along beam)</div>
+    <canvas id="front" width="286" height="286"></canvas>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="ctrl-row wrap">
+  <div class="panel">
+    <div class="panel-title">Controls</div>
+    <div class="slider-row">
+      <span class="sl-label">Polar angle θ (from beam axis)</span>
+      <input type="range" id="slTheta" min="1" max="179" value="55" step="1">
+      <span class="sl-val" id="vTheta">55°</span>
+    </div>
+    <div class="slider-row">
+      <span class="sl-label">Total momentum |p|</span>
+      <input type="range" id="slP" min="0.10" max="5.0" value="1.5" step="0.05">
+      <span class="sl-val" id="vP">1.50 GeV/c</span>
+    </div>
+    <div class="slider-row">
+      <span class="sl-label">Solenoid B-field</span>
+      <input type="range" id="slB" min="0.1" max="1.5" value="0.5" step="0.1">
+      <span class="sl-val" id="vB">0.5 T</span>
+    </div>
+    <div class="presets" id="presets">
+      <button class="pbtn" data-th="2"  data-p="0.15" data-b="0.5">Spectator (θ≈2°)</button>
+      <button class="pbtn" data-th="45" data-p="0.35" data-b="0.5">Soft pion (θ=45°)</button>
+      <button class="pbtn" data-th="75" data-p="1.50" data-b="0.5">Mid-pT hadron</button>
+      <button class="pbtn" data-th="88" data-p="5.00" data-b="0.5">High-pT (jet)</button>
+    </div>
+    <button class="sweep" id="sweepBtn">▶ Auto-sweep θ</button>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Measured Quantities</div>
+    <div class="readout-grid">
+      <div class="rcard pt"><div class="rl">Transverse momentum pT</div><div class="rv-val" id="rdPt">—</div></div>
+      <div class="rcard pz"><div class="rl">Longitudinal pz</div><div class="rv-val" id="rdPz">—</div></div>
+      <div class="rcard pp"><div class="rl">Total |p|</div><div class="rv-val" id="rdP">—</div></div>
+      <div class="rcard et"><div class="rl">Pseudorapidity η</div><div class="rv-val" id="rdEta">—</div></div>
+    </div>
+    <div class="readout-grid" style="margin-top:8px">
+      <div class="rcard rv"><div class="rl">Track radius R (in B)</div><div class="rv-val" id="rdR">—</div></div>
+      <div class="rcard th"><div class="rl">Polar angle θ</div><div class="rv-val" id="rdTh">—</div></div>
+    </div>
+  </div>
+</div>
+
+<p class="pnote">
+  <strong>How pT is measured:</strong>&nbsp;
+  A solenoid field <span class="fm">B</span> runs along the beam (z-axis). Charged particles curve in the transverse (x–y) plane.
+  The radius of curvature <span class="fm">R = pT / (0.3·B)</span> is measured by fitting the curved hit pattern in the TPC.
+  High pT → large R → nearly straight track. Low pT → small R → tight spiral.
+  &nbsp;|&nbsp;
+  <strong>Why spectators have pT ≈ 0:</strong> they travel along the beam (θ ≈ 0°), receive no transverse kick, and fly straight into the Zero Degree Calorimeter (ZDC) — invisible to the barrel TPC.
+  &nbsp;|&nbsp;
+  <strong>pT is Lorentz-invariant</strong> under longitudinal boosts (changing reference frame along z) — which is why it is the preferred variable in heavy-ion physics.
+</p>
+
+</div><!-- wrap -->
+<script>
+// ─── State ─────────────────────────────────────────────────────────────────
+let th_deg  = 55;
+let p_tot   = 1.5;
+let B       = 0.5;
+let sweeping = false;
+let swDir    = 1;
+let phi_anim = 0;   // azimuthal rotation for front view
+
+// ─── DOM ───────────────────────────────────────────────────────────────────
+const sideC  = document.getElementById('side');
+const frontC = document.getElementById('front');
+const sCtx   = sideC.getContext('2d');
+const fCtx   = frontC.getContext('2d');
+
+// ─── Resize side canvas ────────────────────────────────────────────────────
+function resize() {
+  const w = sideC.parentElement.clientWidth - 24;
+  sideC.width  = w;
+  sideC.height = Math.round(w * 0.50);
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ─── Sliders ───────────────────────────────────────────────────────────────
+document.getElementById('slTheta').addEventListener('input', e => {
+  th_deg = +e.target.value;
+  document.getElementById('vTheta').textContent = th_deg + '°';
+});
+document.getElementById('slP').addEventListener('input', e => {
+  p_tot = +e.target.value;
+  document.getElementById('vP').textContent = p_tot.toFixed(2) + ' GeV/c';
+});
+document.getElementById('slB').addEventListener('input', e => {
+  B = +e.target.value;
+  document.getElementById('vB').textContent = B.toFixed(1) + ' T';
+});
+
+// ─── Presets ───────────────────────────────────────────────────────────────
+document.getElementById('presets').addEventListener('click', e => {
+  const btn = e.target.closest('.pbtn');
+  if (!btn) return;
+  document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  th_deg = +btn.dataset.th;
+  p_tot  = +btn.dataset.p;
+  B      = +btn.dataset.b;
+  document.getElementById('slTheta').value  = th_deg;
+  document.getElementById('slP').value      = p_tot;
+  document.getElementById('slB').value      = B;
+  document.getElementById('vTheta').textContent = th_deg + '°';
+  document.getElementById('vP').textContent     = p_tot.toFixed(2) + ' GeV/c';
+  document.getElementById('vB').textContent     = B.toFixed(1) + ' T';
+});
+
+// ─── Sweep ─────────────────────────────────────────────────────────────────
+document.getElementById('sweepBtn').addEventListener('click', () => {
+  sweeping = !sweeping;
+  const btn = document.getElementById('sweepBtn');
+  btn.classList.toggle('on', sweeping);
+  btn.textContent = sweeping ? '⏸ Stop sweep' : '▶ Auto-sweep θ';
+});
+
+// ─── Physics ───────────────────────────────────────────────────────────────
+function phys() {
+  const th = th_deg * Math.PI / 180;
+  const pT = p_tot * Math.sin(th);
+  const pz = p_tot * Math.cos(th);
+  const eta = th < 0.001 ? Infinity : th > Math.PI - 0.001 ? -Infinity
+              : -Math.log(Math.tan(th / 2));
+  const R = pT > 0.001 ? pT / (0.3 * B) : Infinity;
+  return { th, pT, pz, eta, R };
+}
+
+// ─── Readouts ──────────────────────────────────────────────────────────────
+function updateReadouts() {
+  const { pT, pz, eta, R } = phys();
+  document.getElementById('rdPt').textContent  = pT.toFixed(3)  + ' GeV/c';
+  document.getElementById('rdPz').textContent  = pz.toFixed(3)  + ' GeV/c';
+  document.getElementById('rdP').textContent   = p_tot.toFixed(3)+ ' GeV/c';
+  document.getElementById('rdEta').textContent = isFinite(eta) ? eta.toFixed(3) : (eta > 0 ? '+∞' : '−∞');
+  document.getElementById('rdR').textContent   = isFinite(R)   ? R.toFixed(3) + ' m' : '∞ (straight)';
+  document.getElementById('rdTh').textContent  = Math.round(th_deg) + '°';
+}
+
+// ─── Draw helpers ──────────────────────────────────────────────────────────
+function arrow(ctx, x1,y1,x2,y2, col, lw=2, hl=12) {
+  const dx=x2-x1, dy=y2-y1, a=Math.atan2(dy,dx);
+  ctx.save();
+  ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=lw;
+  ctx.shadowColor=col; ctx.shadowBlur=6;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hl*Math.cos(a-.4), y2-hl*Math.sin(a-.4));
+  ctx.lineTo(x2-hl*Math.cos(a+.4), y2-hl*Math.sin(a+.4));
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function dline(ctx, x1,y1,x2,y2, col, dash=[6,4]) {
+  ctx.save();
+  ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.setLineDash(dash); ctx.globalAlpha=.75;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.restore();
+}
+function lbl(ctx, txt, x, y, col='#e2e8f0', sz=12, align='center') {
+  ctx.save();
+  ctx.font=`500 ${sz}px Inter,sans-serif`;
+  ctx.fillStyle=col; ctx.textAlign=align; ctx.textBaseline='middle';
+  ctx.fillText(txt,x,y);
+  ctx.restore();
+}
+function circle(ctx, x,y,r, fill, stroke, lw=1.5) {
+  ctx.save();
+  ctx.fillStyle=fill; ctx.strokeStyle=stroke; ctx.lineWidth=lw;
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+
+// ─── SIDE VIEW ─────────────────────────────────────────────────────────────
+function drawSide(t) {
+  const W=sideC.width, H=sideC.height;
+  const cx=W/2, cy=H/2;
+  // scale: 1 m = H*0.42 px
+  const sc      = H * 0.42;
+  const tpcOuter= 0.95 * sc;
+  const tpcInner= 0.22 * sc;
+  const tpcLen  = 1.05 * sc;
+  const bpR     = 0.045* sc;
+
+  // ── Background ─────────────────────────────────────────────────────────
+  sCtx.fillStyle='#070b16'; sCtx.fillRect(0,0,W,H);
+  sCtx.save();
+  sCtx.strokeStyle='#111a28'; sCtx.lineWidth=.6;
+  for(let x=0;x<W;x+=38){sCtx.beginPath();sCtx.moveTo(x,0);sCtx.lineTo(x,H);sCtx.stroke();}
+  for(let y=0;y<H;y+=38){sCtx.beginPath();sCtx.moveTo(0,y);sCtx.lineTo(W,y);sCtx.stroke();}
+  sCtx.restore();
+
+  // ── ZDC (left & right) ─────────────────────────────────────────────────
+  const zdcX=W*.06, zdcW=20, zdcH=32;
+  function drawZDC(x) {
+    sCtx.save();
+    sCtx.fillStyle='rgba(30,58,138,.6)'; sCtx.strokeStyle='#2563eb'; sCtx.lineWidth=1.5;
+    sCtx.fillRect(x-zdcW/2, cy-zdcH/2, zdcW, zdcH);
+    sCtx.strokeRect(x-zdcW/2, cy-zdcH/2, zdcW, zdcH);
+    sCtx.restore();
+    lbl(sCtx,'ZDC',x,cy+zdcH/2+13,'#60a5fa',10);
+  }
+  drawZDC(zdcX); drawZDC(W-zdcX);
+
+  // ── TPC barrel fill ────────────────────────────────────────────────────
+  sCtx.fillStyle='rgba(12,22,44,.85)';
+  sCtx.fillRect(cx-tpcLen, cy-tpcOuter, 2*tpcLen, 2*tpcOuter);
+
+  // TPC outer wall
+  sCtx.strokeStyle='#2d4060'; sCtx.lineWidth=2;
+  sCtx.strokeRect(cx-tpcLen, cy-tpcOuter, 2*tpcLen, 2*tpcOuter);
+
+  // TPC inner boundary (dashed)
+  sCtx.save(); sCtx.strokeStyle='#3d5470'; sCtx.lineWidth=1; sCtx.setLineDash([4,3]);
+  sCtx.strokeRect(cx-tpcLen, cy-tpcInner, 2*tpcLen, 2*tpcInner);
+  sCtx.restore();
+
+  // Endcap discs
+  sCtx.save();
+  sCtx.fillStyle='rgba(56,189,248,.10)'; sCtx.strokeStyle='#38bdf8'; sCtx.lineWidth=2.5;
+  sCtx.fillRect(cx-tpcLen-5, cy-tpcOuter, 5, 2*tpcOuter);
+  sCtx.strokeRect(cx-tpcLen-5, cy-tpcOuter, 5, 2*tpcOuter);
+  sCtx.fillRect(cx+tpcLen,   cy-tpcOuter, 5, 2*tpcOuter);
+  sCtx.strokeRect(cx+tpcLen, cy-tpcOuter, 5, 2*tpcOuter);
+  sCtx.restore();
+
+  // ── Beam pipe ──────────────────────────────────────────────────────────
+  const bpG=sCtx.createLinearGradient(0,cy-bpR,0,cy+bpR);
+  bpG.addColorStop(0,'#1e3a5f'); bpG.addColorStop(.5,'#1d4ed8'); bpG.addColorStop(1,'#1e3a5f');
+  sCtx.fillStyle=bpG; sCtx.fillRect(0,cy-bpR,W,2*bpR);
+  sCtx.strokeStyle='#3b82f6'; sCtx.lineWidth=1;
+  sCtx.strokeRect(0,cy-bpR,W,2*bpR);
+
+  // beam direction arrows inside pipe
+  sCtx.save(); sCtx.globalAlpha=.6;
+  for(let ax=cx-tpcLen+30; ax<cx+tpcLen-20; ax+=55)
+    arrow(sCtx, ax, cy+bpR*.35, ax+16, cy+bpR*.35, '#93c5fd',1,5);
+  for(let ax=cx+tpcLen-30; ax>cx-tpcLen+20; ax-=55)
+    arrow(sCtx, ax, cy-bpR*.35, ax-16, cy-bpR*.35, '#93c5fd',1,5);
+  sCtx.restore();
+
+  // ── Labels ─────────────────────────────────────────────────────────────
+  lbl(sCtx,'TPC Barrel  (solenoid B ⊗)',cx,cy-tpcOuter-13,'#475569',10);
+  lbl(sCtx,'Endcap',cx-tpcLen-14,cy-tpcOuter-13,'#38bdf8',9);
+  lbl(sCtx,'Endcap',cx+tpcLen+14,cy-tpcOuter-13,'#38bdf8',9);
+  lbl(sCtx,'← z (beam direction) →',cx,H-9,'#334155',10);
+
+  // ── Physics: track direction ────────────────────────────────────────────
+  const {th, pT, pz} = phys();
+  // In canvas: right = +z, up = +r  (canvas y is flipped: up = negative canvas-y)
+  const dX =  Math.cos(th);   // +z direction
+  const dY = -Math.sin(th);   // +r direction (up in canvas = negative canvas-y)
+
+  // clip track to TPC outer boundary
+  let tMax = 9999;
+  if (Math.abs(dY) > 1e-4) tMax = Math.min(tMax, tpcOuter / Math.abs(dY));
+  if (Math.abs(dX) > 1e-4) tMax = Math.min(tMax, tpcLen  / Math.abs(dX));
+  const isSpec = th_deg < 4 || th_deg > 176;
+  const tDraw  = isSpec ? Math.min(tMax, 90) : tMax;
+
+  const ex = cx + dX*tDraw, ey = cy + dY*tDraw;
+
+  // ── Vertex glow ────────────────────────────────────────────────────────
+  const vg=sCtx.createRadialGradient(cx,cy,0,cx,cy,20);
+  vg.addColorStop(0,'rgba(252,211,77,.85)'); vg.addColorStop(1,'rgba(252,211,77,0)');
+  sCtx.fillStyle=vg; sCtx.beginPath(); sCtx.arc(cx,cy,20,0,Math.PI*2); sCtx.fill();
+  circle(sCtx,cx,cy,4,'#fde68a','#f59e0b',1.5);
+
+  // ── Track ─────────────────────────────────────────────────────────────
+  sCtx.save();
+  sCtx.strokeStyle='#a78bfa'; sCtx.lineWidth=2.5;
+  sCtx.shadowColor='#a78bfa'; sCtx.shadowBlur=10;
+  sCtx.beginPath(); sCtx.moveTo(cx,cy); sCtx.lineTo(ex,ey); sCtx.stroke();
+  // animated particle dot
+  const frac = (t % 1300)/1300;
+  const dotX=cx+dX*tDraw*frac, dotY=cy+dY*tDraw*frac;
+  sCtx.fillStyle='#c4b5fd'; sCtx.beginPath(); sCtx.arc(dotX,dotY,5,0,Math.PI*2); sCtx.fill();
+  sCtx.restore();
+
+  // ── Momentum vector decomposition ─────────────────────────────────────
+  const sc2    = Math.min(sc * p_tot * .95, tDraw * .88);
+  const vecX   = cx + dX*sc2;
+  const vecY   = cy + dY*sc2;
+
+  // pz: horizontal dashed (blue)
+  dline(sCtx, cx, cy, vecX, cy, '#60a5fa');
+  // pT: vertical dashed (red)
+  dline(sCtx, vecX, cy, vecX, vecY, '#f87171');
+
+  // right-angle marker
+  const sq=9*Math.sign(dX||1);
+  sCtx.save(); sCtx.strokeStyle='#475569'; sCtx.lineWidth=1;
+  sCtx.beginPath();
+  sCtx.moveTo(vecX-sq, cy);
+  sCtx.lineTo(vecX-sq, cy+(dY>0?9:-9));
+  sCtx.lineTo(vecX,    cy+(dY>0?9:-9));
+  sCtx.stroke(); sCtx.restore();
+
+  // |p| arrow (gold)
+  arrow(sCtx, cx,cy, vecX,vecY, '#fbbf24', 3, 14);
+
+  // component labels
+  lbl(sCtx, 'pT', vecX + 22*Math.sign(dX||1), (cy+vecY)/2, '#f87171', 13);
+  lbl(sCtx, 'pz', (cx+vecX)/2, cy - 16, '#60a5fa', 13);
+  lbl(sCtx, '|p|', (cx+vecX)/2 - 14, (cy+vecY)/2 - 18, '#fbbf24', 13);
+
+  // ── θ arc ──────────────────────────────────────────────────────────────
+  const arcR=40;
+  sCtx.save(); sCtx.strokeStyle='#fb923c'; sCtx.lineWidth=1.5; sCtx.setLineDash([4,3]);
+  sCtx.beginPath();
+  sCtx.arc(cx, cy, arcR, 0, Math.atan2(dY, dX));
+  sCtx.stroke(); sCtx.restore();
+  const tMid = Math.atan2(dY, dX) / 2;
+  lbl(sCtx, 'θ', cx+arcR*1.45*Math.cos(tMid), cy+arcR*1.45*Math.sin(tMid), '#fb923c', 13);
+
+  // ── Spectator annotation ───────────────────────────────────────────────
+  if (isSpec) {
+    const zdcTarget = (th_deg < 90) ? W - zdcX : zdcX;
+    sCtx.save();
+    sCtx.fillStyle='rgba(37,99,235,.12)'; sCtx.strokeStyle='#3b82f6';
+    sCtx.lineWidth=1; sCtx.setLineDash([5,4]);
+    const rx = Math.min(cx, zdcTarget), rw = Math.abs(zdcTarget-cx);
+    sCtx.fillRect(rx, cy-bpR*2, rw, bpR*4);
+    sCtx.strokeRect(rx, cy-bpR*2, rw, bpR*4);
+    sCtx.restore();
+    lbl(sCtx, '⚠ Spectator — pT ≈ 0 → enters ZDC (not detected by barrel TPC)', cx, cy-bpR*2-11, '#60a5fa', 10.5);
+  }
+}
+
+// ─── FRONT VIEW ────────────────────────────────────────────────────────────
+function drawFront() {
+  const W=frontC.width, H=frontC.height;
+  const cx=W/2, cy=H/2;
+  const sc = H * 0.44;
+
+  const rBP  = 0.045*sc;
+  const rIT  = 0.09 *sc;
+  const rIn  = 0.22 *sc;
+  const rOut = 0.95 *sc;
+
+  // ── Background ─────────────────────────────────────────────────────────
+  fCtx.fillStyle='#070b16'; fCtx.fillRect(0,0,W,H);
+  fCtx.save(); fCtx.strokeStyle='#0e1625'; fCtx.lineWidth=.5;
+  for(let r=20;r<Math.max(W,H)*1.5;r+=22){
+    fCtx.beginPath(); fCtx.arc(cx,cy,r,0,Math.PI*2); fCtx.stroke();
+  }
+  fCtx.restore();
+
+  // ── Detector rings ──────────────────────────────────────────────────────
+  // TPC outer
+  fCtx.save();
+  fCtx.fillStyle='rgba(10,20,44,.9)'; fCtx.strokeStyle='#2d4060'; fCtx.lineWidth=2;
+  fCtx.beginPath(); fCtx.arc(cx,cy,rOut,0,Math.PI*2); fCtx.fill(); fCtx.stroke();
+  fCtx.restore();
+
+  // TPC inner (dashed)
+  fCtx.save(); fCtx.strokeStyle='#3d5470'; fCtx.lineWidth=1; fCtx.setLineDash([4,3]);
+  fCtx.beginPath(); fCtx.arc(cx,cy,rIn,0,Math.PI*2); fCtx.stroke(); fCtx.restore();
+
+  // Inner tracker
+  fCtx.save(); fCtx.strokeStyle='#38bdf8'; fCtx.lineWidth=2;
+  fCtx.beginPath(); fCtx.arc(cx,cy,rIT,0,Math.PI*2); fCtx.stroke(); fCtx.restore();
+
+  // Beam pipe
+  const bpG=fCtx.createRadialGradient(cx,cy,0,cx,cy,rBP);
+  bpG.addColorStop(0,'#2563eb'); bpG.addColorStop(1,'#1e3a5f');
+  circle(fCtx,cx,cy,rBP,bpG,'#3b82f6',1.5);
+
+  // ── B-field indicator ────────────────────────────────────────────────
+  fCtx.save();
+  fCtx.font='bold 20px serif'; fCtx.fillStyle='#fbbf24';
+  fCtx.textAlign='center'; fCtx.textBaseline='middle';
+  fCtx.fillText('⊙', cx - rOut*.68, cy - rOut*.65);
+  fCtx.restore();
+  lbl(fCtx,'B (out of page)', cx-rOut*.68, cy-rOut*.65+15, '#94a3b8', 9);
+
+  // ── Track curvature ──────────────────────────────────────────────────
+  const {pT, R} = phys();
+  const R_px = R * sc;
+
+  if (pT < 0.005) {
+    // Spectator: dot only
+    const sg=fCtx.createRadialGradient(cx,cy,0,cx,cy,10);
+    sg.addColorStop(0,'rgba(96,165,250,.9)'); sg.addColorStop(1,'rgba(96,165,250,0)');
+    fCtx.fillStyle=sg; fCtx.beginPath(); fCtx.arc(cx,cy,10,0,Math.PI*2); fCtx.fill();
+    lbl(fCtx,'pT ≈ 0 (spectator)',cx,cy+18,'#60a5fa',10);
+  } else {
+    // Helix center is perpendicular to track direction at distance R_px
+    const perpAngle = phi_anim + Math.PI/2;
+    const hcx = cx + R_px * Math.cos(perpAngle);
+    const hcy = cy + R_px * Math.sin(perpAngle);
+    const startAngle = Math.atan2(cy-hcy, cx-hcx);
+    // arc length: limit to where track would exit TPC outer or 3/4 revolution
+    const maxArc = Math.min(1.5*Math.PI, (rOut/Math.max(R_px,.001)));
+
+    // Draw track arc
+    fCtx.save();
+    fCtx.strokeStyle='#a78bfa'; fCtx.lineWidth=2.5;
+    fCtx.shadowColor='#a78bfa'; fCtx.shadowBlur=10;
+    fCtx.beginPath();
+    fCtx.arc(hcx, hcy, R_px, startAngle, startAngle - maxArc, true);
+    fCtx.stroke();
+
+    // Animated dot
+    const frac=(performance.now()%1300)/1300;
+    const dA = startAngle - maxArc*frac;
+    const dotX=hcx+R_px*Math.cos(dA), dotY=hcy+R_px*Math.sin(dA);
+    fCtx.fillStyle='#c4b5fd'; fCtx.shadowBlur=14;
+    fCtx.beginPath(); fCtx.arc(dotX,dotY,5,0,Math.PI*2); fCtx.fill();
+
+    // Radius of curvature: dashed line from helix center to vertex
+    fCtx.strokeStyle='#34d399'; fCtx.lineWidth=1;
+    fCtx.setLineDash([4,3]); fCtx.shadowBlur=0;
+    fCtx.beginPath(); fCtx.moveTo(hcx,hcy); fCtx.lineTo(cx,cy); fCtx.stroke();
+    fCtx.restore();
+
+    // R label
+    const rlx=(hcx+cx)/2, rly=(hcy+cy)/2;
+    lbl(fCtx,'R', rlx, rly-11, '#34d399', 11);
+    lbl(fCtx,`= ${R<99?R.toFixed(2):'∞'} m`, rlx, rly+5, '#34d399', 10);
+
+    // pT vector arrow from vertex
+    const ptDisp = Math.min(R_px*.75, rOut*.78);
+    arrow(fCtx, cx,cy, cx+ptDisp*Math.cos(phi_anim), cy+ptDisp*Math.sin(phi_anim), '#f87171', 2.5, 10);
+    lbl(fCtx,'pT', cx+ptDisp*Math.cos(phi_anim)+18, cy+ptDisp*Math.sin(phi_anim)-8, '#f87171', 12);
+  }
+
+  // ── Ring labels ──────────────────────────────────────────────────────
+  lbl(fCtx,'TPC', cx+rOut*.62, cy-rOut*.65, '#3d5470', 9);
+  lbl(fCtx,'ITS', cx+rIT+28, cy, '#38bdf8', 9);
+
+  // ── Vertex glow ──────────────────────────────────────────────────────
+  const vg=fCtx.createRadialGradient(cx,cy,0,cx,cy,12);
+  vg.addColorStop(0,'rgba(252,211,77,.9)'); vg.addColorStop(1,'rgba(252,211,77,0)');
+  fCtx.fillStyle=vg; fCtx.beginPath(); fCtx.arc(cx,cy,12,0,Math.PI*2); fCtx.fill();
+  circle(fCtx,cx,cy,3.5,'#fde68a','#f59e0b',1);
+
+  // R formula
+  lbl(fCtx, `R = pT / (0.3·B)  [m, GeV/c, T]`, cx, H-11, '#475569', 10);
+}
+
+// ─── Main loop ─────────────────────────────────────────────────────────────
+let last = 0;
+function loop(ts) {
+  // sweep
+  if (sweeping) {
+    th_deg += swDir * 0.55;
+    if (th_deg >= 178) swDir = -1;
+    if (th_deg <= 2)   swDir =  1;
+    document.getElementById('slTheta').value = th_deg;
+    document.getElementById('vTheta').textContent = Math.round(th_deg) + '°';
+  }
+  // slow phi rotation for front view (1 rev / 8 s)
+  phi_anim = (ts * 0.000785) % (2 * Math.PI);
+
+  updateReadouts();
+  drawSide(ts);
+  drawFront();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
