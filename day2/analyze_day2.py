@@ -340,56 +340,10 @@ def analyze_speed_of_sound():
     save_figure(fig, os.path.join(os.path.dirname(__file__), 'day2_speed_of_sound.png'))
 
 
-def generate_alice_centrality_plot():
-    """Generates a high-quality visualization of ALICE dN_ch/deta vs eta at 5.02 TeV for different centralities."""
-    print("Generating Plot 5: ALICE centrality dependence of dN_ch/deta...")
-    setup_style()
-    fig, ax = plt.subplots(figsize=(10, 6))
-
-    # Centrality classes and their peak yields at eta=0 (from ALICE Pb-Pb 5.02 TeV data)
-    centralities = [
-        ('0-5%', 1948),
-        ('5-10%', 1587),
-        ('10-20%', 1180),
-        ('20-30%', 887),
-        ('30-40%', 609),
-        ('40-50%', 398),
-        ('50-60%', 248),
-        ('60-70%', 143),
-        ('70-80%', 75),
-        ('80-90%', 32)
-    ]
-
-    eta = np.linspace(-5.5, 5.5, 200)
-
-    # Use a premium colormap gradient for the curves (from central to peripheral)
-    cmap = plt.get_cmap('plasma')
-    colors = [cmap(val) for val in np.linspace(0.05, 0.85, len(centralities))]
-
-    for (label, peak_yield), color in zip(centralities, colors):
-        # Shape: flat plateau falling off at forward eta
-        yield_curve = peak_yield / (1.0 + np.exp((np.abs(eta) - 3.8) / 0.8))
-        ax.plot(eta, yield_curve, '-', color=color, linewidth=2.5, label=label)
-
-    ax.set_xlabel(r'Pseudorapidity $\eta$', fontsize=16)
-    ax.set_ylabel(r'$\mathrm{d}N_{\mathrm{ch}}/\mathrm{d}\eta$', fontsize=16)
-    ax.set_title(r'ALICE $\mathrm{d}N_{\mathrm{ch}}/\mathrm{d}\eta$ in Pb+Pb Collisions at $\sqrt{s_{NN}} = 5.02$ TeV', fontsize=14)
-    ax.set_xlim(-5.2, 5.2)
-    ax.set_ylim(0, 2200)
-    ax.grid(True, linestyle=':', alpha=0.5)
-    
-    # Place legend on the right outside the plot box to avoid overlapping data
-    ax.legend(title='Centrality Class', frameon=True, fontsize=11, loc='upper left', bbox_to_anchor=(1.02, 1.0))
-
-    plt.tight_layout()
-    save_figure(fig, os.path.join(os.path.dirname(__file__), 'day2_alice_centrality_dndeta.png'))
-
-
 if __name__ == "__main__":
     print("Starting Day 2 Data Analysis on subsets...")
     analyze_dndy_vs_dndeta()
     analyze_species_dip()
     analyze_landau_width()
     analyze_speed_of_sound()
-    generate_alice_centrality_plot()
     print("Day 2 Analysis complete. Plots saved in day2 folder.")
