@@ -544,7 +544,7 @@
                 // Draw vector line from origin
                 // x maps to z momentum (longitudinal), y maps to pT (transverse)
                 // We draw top half for positive pT, and random direction
-                const endX = cX + (bz = b.pz_boosted) * lengthScale;
+                const endX = cX + b.pz_boosted * lengthScale;
                 // Transverse component is always positive, but we plot half going up and half going down
                 const sign = (p.y_cms * 1000 % 2 > 1) ? 1 : -1;
                 const endY = cY - p.pT * lengthScale * sign;
@@ -622,7 +622,7 @@
             };
 
             if (typeof Plotly !== 'undefined') {
-                Plotly.newPlot('yPlot', [traceY, traceYCms], layoutY, { responsive: true, displayModeBar: false });
+                Plotly.react('yPlot', [traceY, traceYCms], layoutY, { responsive: true, displayModeBar: false });
             }
 
             // Plot 2: dN/deta'
@@ -660,7 +660,7 @@
             };
 
             if (typeof Plotly !== 'undefined') {
-                Plotly.newPlot('etaPlot', [traceEta, traceEtaCms], layoutEta, { responsive: true, displayModeBar: false });
+                Plotly.react('etaPlot', [traceEta, traceEtaCms], layoutEta, { responsive: true, displayModeBar: false });
             }
         }
 
@@ -701,9 +701,6 @@
             drawSpray();
             updatePlots();
         }
-
-        // Live draw ticks
-        setInterval(drawSpray, 100);
 
         // Animation Scan loop for boost
         function toggleAnimation() {

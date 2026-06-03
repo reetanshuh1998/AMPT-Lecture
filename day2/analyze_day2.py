@@ -44,6 +44,7 @@ def analyze_dndy_vs_dndeta():
         event_count = 0
 
         for header, particles in iter_events(filepath, max_events=100):
+            event_count += 1
             # Mask for charged particles
             charged_mask = np.array([is_charged(pid) for pid in particles['pid']])
             sel = particles[charged_mask]
@@ -54,7 +55,6 @@ def analyze_dndy_vs_dndeta():
             eta = pseudorapidity(sel['px'], sel['py'], sel['pz'])
             all_y.extend(y)
             all_eta.extend(eta)
-            event_count += 1
 
         # Histograms
         bins = np.linspace(-4.5, 4.5, 45)
@@ -108,9 +108,9 @@ def analyze_species_dip():
     fig, ax = plt.subplots(figsize=(11, 6.5)) # Width increased to accommodate legend on right
 
     species = {
-        'Pions ($\pi^\pm$)': {'pid': 211, 'color': COLORS['blue'], 'marker': 'o'},
-        'Kaons ($K^\pm$)': {'pid': 321, 'color': COLORS['green'], 'marker': 's'},
-        'Protons ($p/\bar{p}$)': {'pid': 2212, 'color': COLORS['red'], 'marker': '^'}
+        r'Pions ($\pi^\pm$)': {'pid': 211, 'color': COLORS['blue'], 'marker': 'o'},
+        r'Kaons ($K^\pm$)': {'pid': 321, 'color': COLORS['green'], 'marker': 's'},
+        r'Protons ($p/\bar{p}$)': {'pid': 2212, 'color': COLORS['red'], 'marker': '^'}
     }
 
     # Bins close to mid-rapidity to resolve the shape
@@ -123,6 +123,7 @@ def analyze_species_dip():
         event_count = 0
 
         for header, particles in iter_events(FILE_39, max_events=100):
+            event_count += 1
             # Select species by absolute PID
             mask = np.abs(particles['pid']) == info['pid']
             sel = particles[mask]
@@ -131,7 +132,6 @@ def analyze_species_dip():
 
             eta = pseudorapidity(sel['px'], sel['py'], sel['pz'])
             all_eta.extend(eta)
-            event_count += 1
 
         counts, _ = np.histogram(all_eta, bins=bins)
         yield_val = counts / (event_count * bin_width)
@@ -165,6 +165,7 @@ def analyze_landau_width():
 
     # Calculate actual pion rapidity widths from 7.7 and 39 GeV data
     ampt_widths = {}
+    ampt_widths_err = {}
     for filepath, energy_val in zip([FILE_7_7, FILE_39], [7.7, 39.0]):
         all_y = []
         for header, particles in iter_events(filepath, max_events=100):
@@ -176,9 +177,11 @@ def analyze_landau_width():
             y = rapidity(sel['px'], sel['py'], sel['pz'], sel['mass'])
             all_y.extend(y)
         
-        # Calculate standard deviation
+        # Calculate standard deviation and statistical error
         ampt_widths[energy_val] = np.std(all_y)
-        print(f"  AMPT Pion rapidity width σ_y at {energy_val} GeV = {ampt_widths[energy_val]:.4f}")
+        n_pions = len(all_y)
+        ampt_widths_err[energy_val] = ampt_widths[energy_val] / np.sqrt(2 * (n_pions - 1)) if n_pions > 1 else 0.0
+        print(f"  AMPT Pion rapidity width σ_y at {energy_val} GeV = {ampt_widths[energy_val]:.4f} +/- {ampt_widths_err[energy_val]:.4f} (N={n_pions})")
 
     # Generate Landau model curves
     # √s_NN range from 3 GeV to 100 GeV
@@ -201,11 +204,13 @@ def analyze_landau_width():
     ax.plot(sqrtS_arr, width_realistic, '--', color=COLORS['blue'], linewidth=2,
             label=r'Landau Hadron Gas ($c_s^2 = 0.20$)')
 
-    # Plot AMPT results
-    ax.scatter([7.7], [ampt_widths[7.7]], color=COLORS['purple'], marker='o', s=120, zorder=5,
-               label=r'AMPT $\pi^\pm$ ($\sqrt{s_{NN}}$ = 7.7 GeV)')
-    ax.scatter([39.0], [ampt_widths[39.0]], color=COLORS['green'], marker='D', s=100, zorder=5,
-               label=r'AMPT $\pi^\pm$ ($\sqrt{s_{NN}}$ = 39 GeV)')
+    # Plot AMPT results with statistical error bars
+    ax.errorbar([7.7], [ampt_widths[7.7]], yerr=[ampt_widths_err[7.7]], fmt='o', color=COLORS['purple'],
+                markersize=10, capsize=4, elinewidth=1.5, zorder=5,
+                label=r'AMPT $\pi^\pm$ ($\sqrt{s_{NN}}$ = 7.7 GeV)')
+    ax.errorbar([39.0], [ampt_widths[39.0]], yerr=[ampt_widths_err[39.0]], fmt='D', color=COLORS['green'],
+                markersize=8, capsize=4, elinewidth=1.5, zorder=5,
+                label=r'AMPT $\pi^\pm$ ($\sqrt{s_{NN}}$ = 39 GeV)')
 
     ax.set_xlabel(r'Center-of-mass energy $\sqrt{s_{NN}}$ (GeV)', fontsize=16)
     ax.set_ylabel(r'Rapidity Width $\sigma_y$', fontsize=16)
@@ -222,8 +227,8 @@ def analyze_landau_width():
     formula_text = (
         r"$\mathbf{Landau\ Hydrodynamic\ Prediction:}$" "\n"
         r"$\sigma_y^2 = \frac{8}{3} \frac{c_s^2}{1 - c_s^4} \ln\left(\frac{\sqrt{s_{NN}}}{2 m_p}\right)$" "\n\n"
-        r"$\bullet\ \sigma_y(7.7\ \mathrm{GeV}) = $ " + f"{ampt_widths[7.7]:.3f}\n"
-        r"$\bullet\ \sigma_y(39\ \mathrm{GeV}) = $ " + f"{ampt_widths[39.0]:.3f}"
+        r"$\bullet\ \sigma_y(7.7\ \mathrm{GeV}) = $ " + f"{ampt_widths[7.7]:.3f} \\pm {ampt_widths_err[7.7]:.3f}\n"
+        r"$\bullet\ \sigma_y(39\ \mathrm{GeV}) = $ " + f"{ampt_widths[39.0]:.3f} \\pm {ampt_widths_err[39.0]:.3f}"
     )
     ax.text(25, 0.45, formula_text, fontsize=10, fontfamily='serif',
             bbox=dict(boxstyle='round,pad=0.5', facecolor='#f8fafc', edgecolor='#cbd5e1', alpha=0.9))
@@ -240,6 +245,7 @@ def analyze_speed_of_sound():
 
     # Calculate actual pion rapidity widths from 7.7 and 39 GeV data
     ampt_widths = {}
+    ampt_widths_err = {}
     for filepath, energy_val in zip([FILE_7_7, FILE_39], [7.7, 39.0]):
         all_y = []
         for header, particles in iter_events(filepath, max_events=100):
@@ -250,19 +256,26 @@ def analyze_speed_of_sound():
             y = rapidity(sel['px'], sel['py'], sel['pz'], sel['mass'])
             all_y.extend(y)
         ampt_widths[energy_val] = np.std(all_y)
+        n_pions = len(all_y)
+        ampt_widths_err[energy_val] = ampt_widths[energy_val] / np.sqrt(2 * (n_pions - 1)) if n_pions > 1 else 0.0
 
     m_p = 0.938272
 
-    # Function to extract cs^2 from sigma_y
-    def extract_cs2(sigma_y, sqrt_sNN):
+    # Function to extract cs^2 and propagate error
+    def extract_cs2(sigma_y, sigma_y_err, sqrt_sNN):
         yp = np.log(sqrt_sNN / (2.0 * m_p))
         prefactor = (4.0 * yp) / (3.0 * sigma_y**2)
         cs2 = -prefactor + np.sqrt(prefactor**2 + 1.0)
-        return cs2
+        
+        # Derivative d(cs2)/d(sigma_y) = cs2 * (2 * x) / (sigma_y * sqrt(x^2 + 1))
+        x = prefactor
+        dcs2_dsigma = cs2 * (2.0 * x) / (sigma_y * np.sqrt(x**2 + 1.0))
+        cs2_err = np.abs(dcs2_dsigma) * sigma_y_err
+        return cs2, cs2_err
 
-    # Calculate cs^2 for AMPT
-    cs2_7_7 = extract_cs2(ampt_widths[7.7], 7.7)
-    cs2_39 = extract_cs2(ampt_widths[39.0], 39.0)
+    # Calculate cs^2 and error for AMPT
+    cs2_7_7, cs2_err_7_7 = extract_cs2(ampt_widths[7.7], ampt_widths_err[7.7], 7.7)
+    cs2_39, cs2_err_39 = extract_cs2(ampt_widths[39.0], ampt_widths_err[39.0], 39.0)
 
     # Beam energies for AMPT points in AGeV
     # E_beam = (s_NN - 2*m_p^2) / (2*m_p)
@@ -290,13 +303,15 @@ def analyze_speed_of_sound():
         cs2_trend.append(val)
     
     ax.plot(E_beam_arr, cs2_trend, '-', color=COLORS['blue'], linewidth=2.5,
-            label=r'Experimental / Transport Trend (CPOD2006)')
+            label=r'CPOD2006 Parametrized Toy Trend (Illustrative)')
 
-    # Plot AMPT results
-    ax.scatter([E_beam_7_7], [cs2_7_7], color=COLORS['purple'], marker='o', s=150, zorder=5,
-               label=r'AMPT $\pi^\pm$ ($\sqrt{s_{NN}}$ = 7.7 GeV, $E_{\mathrm{beam}} \approx 31$ AGeV)')
-    ax.scatter([E_beam_39], [cs2_39], color=COLORS['green'], marker='D', s=130, zorder=5,
-               label=r'AMPT $\pi^\pm$ ($\sqrt{s_{NN}}$ = 39 GeV, $E_{\mathrm{beam}} \approx 810$ AGeV)')
+    # Plot AMPT results with statistical error bars
+    ax.errorbar([E_beam_7_7], [cs2_7_7], yerr=[cs2_err_7_7], fmt='o', color=COLORS['purple'],
+                markersize=10, capsize=4, elinewidth=1.5, zorder=5,
+                label=r'AMPT $\pi^\pm$ ($\sqrt{s_{NN}}$ = 7.7 GeV, $E_{\mathrm{beam}} \approx 31$ AGeV)')
+    ax.errorbar([E_beam_39], [cs2_39], yerr=[cs2_err_39], fmt='D', color=COLORS['green'],
+                markersize=8, capsize=4, elinewidth=1.5, zorder=5,
+                label=r'AMPT $\pi^\pm$ ($\sqrt{s_{NN}}$ = 39 GeV, $E_{\mathrm{beam}} \approx 810$ AGeV)')
 
     ax.set_xlabel(r'Beam Energy $E_{\mathrm{beam}}$ (AGeV)', fontsize=16)
     ax.set_ylabel(r'Extracted Speed of Sound $c_s^2$', fontsize=16)

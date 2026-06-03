@@ -326,7 +326,7 @@
         <div class="panel">
             <div class="header-panel">
                 <h1>📐 Jacobian & Mass-Effect Explorer</h1>
-                <p>Day 2 Masterclass: Visualize how standard momentum rapidity ($y$) maps to angular pseudorapidity ($\eta$). Study the coordinate transformation Jacobian $\mathrm{d}y/\mathrm{d}\eta = p/E = \beta$ which creates the physical mid-rapidity dip at $\eta=0$ for massive particles.</p>
+                <p>Day 2 Masterclass: Visualize how standard momentum rapidity ($y$) maps to angular pseudorapidity ($\eta$). Study the coordinate transformation Jacobian $\mathrm{d}y/\mathrm{d}\eta = p/E = \beta$ which creates the kinematic/Jacobian-induced dip at $\eta=0$ for massive particles.</p>
             </div>
 
             <!-- Species selector -->
@@ -400,7 +400,7 @@
                     <p id="metric-theta">90.0°</p>
                 </div>
                 <div class="metric-card highlight">
-                    <h4>Jacobian Factor J(y) = dη/dy = p/E</h4>
+                    <h4>Jacobian Factor J = dy/dη = p/E = β</h4>
                     <p id="metric-jacobian">J = 0.903 (10% Suppression)</p>
                 </div>
             </div>
@@ -625,13 +625,12 @@
             };
 
             if (typeof Plotly !== 'undefined') {
-                Plotly.newPlot('jacobianPlot', [traceJLine, traceJDot], layoutJ, { responsive: true, displayModeBar: false });
+                Plotly.react('jacobianPlot', [traceJLine, traceJDot], layoutJ, { responsive: true, displayModeBar: false });
             }
 
             // Plot 2: dN/dy vs dN/deta distributions
             // We assume dN/dy is a smooth Gaussian: dN/dy = N0 * exp(-y^2 / 2σ_y^2)
             // Then dN/deta = J(y) * dN/dy, where y is evaluated from eta
-            // Wait, we can generate the distribution by scanning eta, calculating corresponding y and Jacobian, and multiplying.
             const etaArr = [];
             const dNdyArr = [];
             const dNdetaArr = [];
@@ -641,9 +640,6 @@
                 etaArr.push(eVal);
                 
                 // For a given eta, what is y?
-                // y = 0.5 * ln( (sqrt(mT^2 + pz^2) + pz) / (sqrt(mT^2 + pz^2) - pz) )?
-                // Actually: pz = pT * sinh(eta), mT = sqrt(pT^2 + m^2), E = sqrt(mT^2 + pz^2) = sqrt(pT^2 + m^2 + pT^2 sinh^2 eta)
-                // From this we calculate E, and y = 0.5 * ln( (E + pz)/(E - pz) ).
                 const pz_val = pT * Math.sinh(eVal);
                 const E_val = Math.sqrt(pT**2 + mass**2 + pz_val**2);
                 const ratio = (E_val + pz_val) / Math.max(E_val - pz_val, 1e-30);
@@ -651,8 +647,9 @@
 
                 const J_val = Math.sqrt(pT**2 + pz_val**2) / Math.max(E_val, 1e-15);
 
-                const dNdy_val = Math.exp(-(y_val * y_val) / (2 * sigma_y**2));
-                const dNdeta_val = J_val * dNdy_val;
+                const dNdy_val = Math.exp(-(eVal * eVal) / (2 * sigma_y**2));
+                const dNdy_at_y_val = Math.exp(-(y_val * y_val) / (2 * sigma_y**2));
+                const dNdeta_val = J_val * dNdy_at_y_val;
 
                 dNdyArr.push(dNdy_val);
                 dNdetaArr.push(dNdeta_val);
@@ -699,7 +696,7 @@
             };
 
             if (typeof Plotly !== 'undefined') {
-                Plotly.newPlot('densityPlot', [tracedNdy, tracedNdeta, traceCurrentEtaDot], layoutD, { responsive: true, displayModeBar: false });
+                Plotly.react('densityPlot', [tracedNdy, tracedNdeta, traceCurrentEtaDot], layoutD, { responsive: true, displayModeBar: false });
             }
         }
 
@@ -715,7 +712,6 @@
             const suppPct = Math.round((1 - phys.jacobian) * 100);
             document.getElementById('metric-jacobian').innerHTML = `J = ${phys.jacobian.toFixed(3)} <span style="font-size:10px; color:#cbd5e1; display:block;">(${suppPct}% Suppression at mid-rapidity)</span>`;
 
-            drawTrajectory(phys);
             updatePlots(phys);
         }
 
