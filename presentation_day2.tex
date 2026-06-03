@@ -46,7 +46,7 @@
 % ---------------------------------------------------------
 % Presentation Details
 % ---------------------------------------------------------
-\title[AMPT Course — Day 2]{Day 2: Relativistic Kinematics I \& II: Rapidity \& Pseudorapidity in Detail}
+\title[AMPT Course --- Day 2]{Day 2: Relativistic Kinematics I \& II: Rapidity \& Pseudorapidity in Detail}
 \subtitle{14-Day Hands-on Course on Heavy-Ion Phenomenology}
 \author[MSc-Lecture Series]{Lecture}
 \institute[HEP Group]{NIT-J, HEP-119}
@@ -99,28 +99,28 @@
     \end{columns}
 \end{frame}
 
-\section{Pseudorapidity mapping}
+\section{Pseudorapidity Mapping}
 
 % Slide 3: Polar Angle to Pseudorapidity mapping
 \begin{frame}{Polar Angle to Pseudorapidity Mapping}
     \begin{block}{Theoretical Definition (Sahoo Eq. 5.138)}
         \small
-        At ultra-relativistic limits ($p \gg m_0$), the momentum rapidity $y$ simplifies to a purely angular, geometric quantity called **Pseudorapidity** ($\eta$):
+        At ultra-relativistic limits ($p \gg m_0$), the momentum rapidity $y$ simplifies to a purely angular, geometric quantity called \textbf{Pseudorapidity} ($\eta$):
         \[ \eta = -\ln \tan \left( \frac{\theta}{2} \right) \]
         Where $\theta$ is the polar angle relative to the beam axis ($z$).
     \end{block}
     \begin{block}{Physical Advantages of Pseudorapidity}
         \footnotesize
         \begin{itemize}
-            \item **No Particle ID (PID) needed:** Calculated solely from the emission angle $\theta$ of the trajectory in the tracker.
-            \item **No magnetic field needed:** Does not require momentum information (only spatial tracking lines).
-            \item **Symmetric / Odd behavior:** It is odd about $\theta = 90^\circ$ ($\eta=0$). That is, $\eta(180^\circ - \theta) = -\eta(\theta)$, reflecting forward-backward symmetry.
+            \item \textbf{No Particle ID (PID) needed:} Calculated solely from the emission angle $\theta$ of the trajectory in the tracker.
+            \item \textbf{No magnetic field needed:} Does not require momentum information (only spatial tracking lines).
+            \item \textbf{Symmetric / Odd behavior:} It is odd about $\theta = 90^\circ$ ($\eta=0$). That is, $\eta(180^\circ - \theta) = -\eta(\theta)$, reflecting forward-backward symmetry.
         \end{itemize}
     \end{block}
 \end{frame}
 
 % Slide 4: Table of Pseudorapidity vs Polar Angle
-\begin{frame}{Angular Detector Mapping: $\theta$ vs. $\eta$}
+\begin{frame}{Angular Detector Mapping: $\theta$ vs.\ $\eta$}
     \begin{columns}
         \begin{column}{0.48\textwidth}
             \begin{block}{Angle to $\eta$ Reference (Sahoo Table 5.3)}
@@ -151,10 +151,11 @@
                 \end{itemize}
             \end{block}
             \begin{alertblock}{Interactive Physics Simulator}
-                Open in your browser:
+                {\sloppy Open in your browser:
                 \begin{itemize}
-                    \item \texttt{animations/05\_pseudorapidity\_detector\_angle.html} \quad {\tiny (Interactive polar angle $\theta$ vs. pseudorapidity $\eta$ detector mapping)}
-                \end{itemize}
+                    \item \texttt{animations/05\_pseudo\-rapidity\_detector\_angle.html}\\
+                    {\tiny (Interactive $\theta$ vs.\ $\eta$ detector mapping)}
+                \end{itemize}}%
             \end{alertblock}
         \end{column}
     \end{columns}
@@ -164,7 +165,7 @@
 
 % Slide 5: Coordinate Changes of Variables
 \begin{frame}{Coordinate Transformation: From $(y, p_T)$ to $(\eta, p_T)$}
-    \begin{block}{Vector Decompositions (Sahoo Eq. 5.141 - 5.143)}
+    \begin{block}{Vector Decompositions (Sahoo Eq. 5.141 -- 5.143)}
         \small
         By defining the pseudorapidity $\eta$ in terms of longitudinal momentum $p_z$ and total momentum magnitude $|\mathbf{p}|$:
         \[ e^\eta = \sqrt{\frac{|\mathbf{p}| + p_z}{|\mathbf{p}| - p_z}}, \quad e^{-\eta} = \sqrt{\frac{|\mathbf{p}| - p_z}{|\mathbf{p}| + p_z}} \]
@@ -181,7 +182,7 @@
         \footnotesize
         The distribution of particles as a function of pseudorapidity ($dN/d\eta$) is related to the rapidity distribution ($dN/dy$) via the phase-space Jacobian $J(y \to \eta) = \mathrm{d}y/\mathrm{d}\eta$:
         \[ \frac{\mathrm{d}N}{\mathrm{d}\eta \mathrm{d}p_T} = J(y \to \eta) \frac{\mathrm{d}N}{\mathrm{d}y \mathrm{d}p_T} = \sqrt{1 - \frac{m_0^2}{m_T^2 \cosh^2 y}} \frac{\mathrm{d}N}{\mathrm{d}y \mathrm{d}p_T} \]
-        Where the Jacobian factor is exactly the particle's longitudinal velocity: $J(y \to \eta) = p/E = \beta$.
+        In the ultra-relativistic (massless) limit $m_0 \to 0$, the Jacobian simplifies to the particle's longitudinal velocity: $J(y \to \eta) \to p/E = \beta \to 1$.
     \end{block}
     \begin{block}{Integration Over Transverse Momentum}
         \footnotesize
@@ -196,8 +197,8 @@
     \begin{block}{Physical Limits of the Jacobian Factor}
         \footnotesize
         \begin{itemize}
-            \item **Massless limit ($m_0 \to 0$ or $p \gg m_0$):** $J(y \to \eta) \to 1 \implies \mathrm{d}N/\mathrm{d}\eta \approx \mathrm{d}N/\mathrm{d}y$. This is highly accurate for photons, electrons, or very high $p_T$ hadrons (where mass is negligible).
-            \item **Massive limit ($m_0 > 0$):** $J(y \to \eta) < 1$ at mid-rapidity ($y \approx 0$). This creates a local, non-physical suppression in the pseudorapidity distribution $\mathrm{d}N/\mathrm{d}\eta$ even when the underlying physical rapidity distribution $\mathrm{d}N/\mathrm{d}y$ is flat or peak-like.
+            \item \textbf{Massless limit ($m_0 \to 0$ or $p \gg m_0$):} $J(y \to \eta) \to 1 \implies \mathrm{d}N/\mathrm{d}\eta \approx \mathrm{d}N/\mathrm{d}y$. This is highly accurate for photons, electrons, or very high $p_T$ hadrons (where mass is negligible).
+            \item \textbf{Massive limit ($m_0 > 0$):} $J(y \to \eta) < 1$ at mid-rapidity ($y \approx 0$). This creates a local, kinematic suppression in the pseudorapidity distribution $\mathrm{d}N/\mathrm{d}\eta$ even when the underlying physical rapidity distribution $\mathrm{d}N/\mathrm{d}y$ is flat or peak-like.
         \end{itemize}
     \end{block}
     \begin{alertblock}{Takeaway}
@@ -206,11 +207,11 @@
 \end{frame}
 
 % Slide 8: AMPT Data Validation: dN/dy vs dN/deta at 7.7 GeV
-\begin{frame}{AMPT Data Validation: $\mathrm{d}N/\mathrm{d}y$ vs. $\mathrm{d}N/\mathrm{d}\eta$ at 7.7 GeV}
+\begin{frame}{AMPT: $\mathrm{d}N/\mathrm{d}y$ vs.\ $\mathrm{d}N/\mathrm{d}\eta$ at $\sqrt{s_{NN}}=7.7$ GeV}
     \begin{columns}
         \begin{column}{0.5\textwidth}
             \begin{center}
-                \includegraphics[height=0.7\textheight]{day2/day2_dndy_vs_dndeta_7.7.png}
+                \includegraphics[height=0.65\textheight]{day2/day2_dndy_vs_dndeta_7.7.png}
             \end{center}
         \end{column}
         \begin{column}{0.5\textwidth}
@@ -220,25 +221,25 @@
                     \item Represents the lower energy regime of the RHIC Beam Energy Scan.
                     \item The rapidity range is restricted ($y_{\mathrm{beam}} \approx 2.09$), resulting in a narrow distribution.
                     \item Peak charged particle yield per event is relatively small ($\mathrm{d}N/\mathrm{d}y \approx 45$).
-                    \item **Jacobian Suppression:** The suppression at $\eta = 0$ is visible as a flattening of the pseudorapidity peak compared to the rapidity distribution.
+                    \item \textbf{Jacobian Suppression:} The suppression at $\eta = 0$ is visible as a flattening of the pseudorapidity peak compared to the rapidity distribution.
                 \end{itemize}
             \end{block}
             \begin{alertblock}{Interactive Jacobian Explorer}
-                Open in your browser:
+                {\sloppy\footnotesize Open in your browser:
                 \begin{itemize}
-                    \item \href{run:day2/day2_rapidity_jacobian_explorer.html}{\texttt{day2/day2\_rapidity\_jacobian\_explorer.html}}
-                \end{itemize}
+                    \item \href{run:day2/day2_rapidity_jacobian_explorer.html}{\texttt{day2/day2\_rapidity\_jacobian\-\_explorer.html}}
+                \end{itemize}}%
             \end{alertblock}
         \end{column}
     \end{columns}
 \end{frame}
 
 % Slide 9: AMPT Data Validation: dN/dy vs dN/deta at 39 GeV
-\begin{frame}{AMPT Data Validation: $\mathrm{d}N/\mathrm{d}y$ vs. $\mathrm{d}N/\mathrm{d}\eta$ at 39.0 GeV}
+\begin{frame}{AMPT: $\mathrm{d}N/\mathrm{d}y$ vs.\ $\mathrm{d}N/\mathrm{d}\eta$ at $\sqrt{s_{NN}}=39$ GeV}
     \begin{columns}
         \begin{column}{0.5\textwidth}
             \begin{center}
-                \includegraphics[height=0.7\textheight]{day2/day2_dndy_vs_dndeta_39.0.png}
+                \includegraphics[height=0.65\textheight]{day2/day2_dndy_vs_dndeta_39.0.png}
             \end{center}
         \end{column}
         \begin{column}{0.5\textwidth}
@@ -251,10 +252,10 @@
                 \end{itemize}
             \end{block}
             \begin{alertblock}{Interactive Jacobian Explorer}
-                Open in your browser:
+                {\sloppy\footnotesize Open in your browser:
                 \begin{itemize}
-                    \item \href{run:day2/day2_rapidity_jacobian_explorer.html}{\texttt{day2/day2\_rapidity\_jacobian\_explorer.html}}
-                \end{itemize}
+                    \item \href{run:day2/day2_rapidity_jacobian_explorer.html}{\texttt{day2/day2\_rapidity\_jacobian\-\_explorer.html}}
+                \end{itemize}}%
             \end{alertblock}
         \end{column}
     \end{columns}
@@ -273,46 +274,20 @@
         \footnotesize
         At mid-rapidity ($\eta = 0 \iff y = 0$), the Jacobian simplifies to: $J(0) = \frac{p_T}{m_T} = \frac{p_T}{\sqrt{p_T^2 + m_0^2}}$.
         \begin{itemize}
-            \item **Pions ($\pi^\pm$, $m_0 \approx 0.14$ GeV):** Very light mass. The ratio $p_T/m_T \approx 1$ for almost all $p_T$. Thus, $J(0) \approx 1$ (no dip).
-            \item **Kaons ($K^\pm$, $m_0 \approx 0.49$ GeV):** Medium mass. Suppression at low $p_T$ is significant, creating a shallow dip.
-            \item **Protons ($p/\bar{p}$, $m_0 \approx 0.94$ GeV):** Heavy mass. Suppression is severe ($J(0) \ll 1$ for $p_T < m_0$), creating a deep, pronounced mid-rapidity dip.
+            \item \textbf{Pions ($\pi^\pm$, $m_0 \approx 0.14$ GeV):} Very light mass. The ratio $p_T/m_T \approx 1$ for almost all $p_T$. Thus, $J(0) \approx 1$ (no dip).
+            \item \textbf{Kaons ($K^\pm$, $m_0 \approx 0.49$ GeV):} Medium mass. Suppression at low $p_T$ is significant, creating a shallow dip.
+            \item \textbf{Protons ($p/\bar{p}$, $m_0 \approx 0.94$ GeV):} Heavy mass. Suppression is severe ($J(0) \ll 1$ for $p_T < m_0$), creating a deep, pronounced mid-rapidity dip.
         \end{itemize}
     \end{block}
     \begin{alertblock}{Physical Takeaway}
-        This dip is purely a coordinate mapping artifact, not physical dynamics (since $dN/dy$ remains flat or peak-like at $y=0$). Heavy particles have a large rest mass, making their velocity $\beta \ll 1$ at low $p_T$, which suppresses $dN/d\eta$ via $J = \beta$.
+        This dip is purely a coordinate mapping artifact, not physical dynamics (since $dN/dy$ remains flat or peak-like at $y=0$). Heavy particles have a large rest mass, making their velocity $\beta \ll 1$ at low $p_T$, which suppresses $dN/d\eta$ via $J \to \beta$.
     \end{alertblock}
 \end{frame}
 
-% Slide 12: Centrality Dependence of dN/deta
-\begin{frame}{Centrality Dependence of Pseudorapidity Distributions}
-    \begin{columns}
-        \begin{column}{0.52\textwidth}
-            \begin{center}
-                \includegraphics[width=1.0\textwidth]{day2/day2_alice_centrality_dndeta.png}
-            \end{center}
-        \end{column}
-        \begin{column}{0.48\textwidth}
-            \footnotesize
-            \begin{block}{Collision Geometry \& Glauber Model}
-                Multiplicity scales with the volume of the overlapping nuclear region:
-                \begin{itemize}
-                    \item **Impact Parameter ($b$):** Distance between nuclear centers.
-                    \item **Participants ($N_{\mathrm{part}}$):** Nucleons in the overlap region. Scales particle yield ($dN_{ch}/d\eta$).
-                    \item **Spectators ($N_{\mathrm{spec}}$):** Non-overlapping nucleons; pass into beam line.
-                \end{itemize}
-            \end{block}
-            \begin{alertblock}{Interactive Centrality Explorer}
-                Open in your browser:
-                \begin{itemize}
-                    \item \href{run:day2/day2_centrality_rapidity_explorer.html}{\texttt{day2/day2\_centrality\_rapidity\_explorer.html}}
-                \end{itemize}
-            \end{alertblock}
-        \end{column}
-    \end{columns}
-\end{frame}
+\section{Rapidity Frames \& Boosts}
 
-% Slide 13: Rapidity Boost & Frame Transformation
-\begin{frame}{Rapidity Boosts: Lab Frame vs. Center-of-Mass Frame}
+% Slide 12: Rapidity Boost & Frame Transformation
+\begin{frame}{Rapidity Boosts: Lab Frame vs.\ Center-of-Mass Frame}
     \begin{columns}
         \begin{column}{0.48\textwidth}
             \begin{block}{Rapidity Additivity (Sahoo Eq. 5.43)}
@@ -321,7 +296,7 @@
             \end{block}
             \begin{block}{Pseudorapidity Deformation}
                 \footnotesize
-                Pseudorapidity $\eta$ does not transform additively under boosts because the polar angle $\theta$ transforms non-linearly. The distribution $\mathrm{d}N/\mathrm{d}\eta'$ skews and deforms.
+                Pseudorapidity $\eta$ does \textbf{not} transform additively under boosts because the polar angle $\theta$ transforms non-linearly. The distribution $\mathrm{d}N/\mathrm{d}\eta'$ skews and deforms.
             \end{block}
         \end{column}
         \begin{column}{0.52\textwidth}
@@ -338,11 +313,63 @@
     \end{columns}
 \end{frame}
 
+\section{Collision Centrality}
+
+% Slide 13: Centrality Dependence of dN/deta — Plot
+\begin{frame}[shrink=3]{Centrality Dependence of Pseudorapidity Distributions}
+    \begin{columns}
+        \begin{column}{0.52\textwidth}
+            \begin{center}
+                \includegraphics[width=1.0\textwidth]{day2/day2_alice_centrality_dndeta.png}
+            \end{center}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \footnotesize
+            \begin{block}{Collision Geometry \& Glauber Model}
+                Multiplicity \textbf{amplitude} scales with the overlapping nuclear volume:
+                \begin{itemize}
+                    \item \textbf{Impact Parameter ($b$):} Distance between nuclear centers. Central ($b \approx 0$ fm, $0-5\%$) vs.\ Peripheral ($b > 12$ fm, $>70\%$).
+                    \item \textbf{Participants ($N_{\mathrm{part}}$):} Nucleons undergoing $\ge 1$ inelastic collision. Directly sets the fireball volume and multiplicity yield.
+                    \item \textbf{Spectators ($N_{\mathrm{spec}}$):} Non-overlapping cold nuclear remnants. Continue at beam rapidity into Zero Degree Calorimeters (ZDCs).
+                \end{itemize}
+            \end{block}
+            \begin{alertblock}{Interactive Centrality Explorer}
+                {\sloppy\footnotesize Open in your browser:
+                \begin{itemize}
+                    \item \href{run:day2/day2_centrality_rapidity_explorer.html}{\texttt{day2/day2\_centrality\_rapidity\-\_explorer.html}}
+                \end{itemize}}%
+            \end{alertblock}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% Slide 14: Physics of Centrality & Rapidity Scaling
+\begin{frame}[shrink=4]{Physics of Centrality \& Multiplicity Scaling}
+    \begin{block}{Two-Component Multiplicity Scaling}
+        \small
+        The total charged particle multiplicity at mid-rapidity follows the two-component Glauber model:
+        \[ \frac{\mathrm{d}N_{\mathrm{ch}}}{\mathrm{d}\eta} \approx n_{pp} \left[ (1 - x) \frac{N_{\mathrm{part}}}{2} + x N_{\mathrm{coll}} \right] \]
+        Where $x \approx 0.15$ at LHC energies.
+        \begin{itemize}
+            \item \textbf{Soft Processes ($\propto N_{\mathrm{part}}$):} String fragmentation and low-$Q^2$ QCD processes.
+            \item \textbf{Hard Processes ($\propto N_{\mathrm{coll}}$):} Point-like perturbative QCD scatterings (jets, mini-jets), which dominate at high energies.
+        \end{itemize}
+    \end{block}
+    \begin{block}{What Centrality Changes (and What It Does Not)}
+        \footnotesize
+        \begin{itemize}
+            \item \textbf{Amplitude $\uparrow$ (central):} More participating nucleons $\Rightarrow$ higher $\mathrm{d}N_\mathrm{ch}/\mathrm{d}\eta$. The curves stack vertically.
+            \item \textbf{Shape (plateau width) unchanged:} The width $\sigma_y$ of the rapidity distribution is set by the \textit{beam energy} $\sqrt{s_{NN}}$, not by centrality. Normalized per participant pair, the distributions are self-similar.
+            \item \textbf{Jacobian dip shallower in central:} Larger radial flow in central collisions boosts $\langle p_T \rangle$, increasing $\beta$ and making the Jacobian suppression at $\eta = 0$ slightly less pronounced.
+        \end{itemize}
+    \end{block}
+\end{frame}
+
 \section{Hydrodynamics \& Speed of Sound}
 
-% Slide 13: Landau Hydrodynamics & Rapidity Widths
+% Slide 15: Landau Hydrodynamics & Rapidity Widths
 \begin{frame}{Landau Hydrodynamics \& Rapidity Widths}
-    \begin{block}{Landau Model Rapidity Distribution (Sahoo pg. 145-146)}
+    \begin{block}{Landau Model Rapidity Distribution (Sahoo pg. 145--146)}
         \small
         In Landau's hydrodynamic model of relativistic expansion, the rapidity distribution of produced pions is described by a Gaussian:
         \[ \frac{\mathrm{d}N}{\mathrm{d}y} = \frac{N}{\sqrt{2\pi \sigma_y^2}} \exp \left( -\frac{y^2}{2\sigma_y^2} \right) \]
@@ -352,18 +379,18 @@
     \begin{block}{Landau Model Scaling Limits}
         \footnotesize
         \begin{itemize}
-            \item **Ideal Gas limit ($c_s^2 = 1/3$):** Prefactor becomes 1, so $\sigma_y = \sqrt{\ln(\sqrt{s_{NN}}/2m_p)}$.
-            \item **Hadron Gas limit ($c_s^2 \approx 0.20$):** Premature freezing or lower speed of sound shrinks the rapidity width $\sigma_y$.
+            \item \textbf{Ideal Gas limit ($c_s^2 = 1/3$):} Prefactor becomes 1, so $\sigma_y = \sqrt{\ln(\sqrt{s_{NN}}/2m_p)}$.
+            \item \textbf{Hadron Gas limit ($c_s^2 \approx 0.20$):} Premature freezing or lower speed of sound shrinks the rapidity width $\sigma_y$.
         \end{itemize}
     \end{block}
 \end{frame}
 
-% Slide 14: Pion Rapidity Widths excitation function
+% Slide 16: Pion Rapidity Widths excitation function
 \begin{frame}{Pion Rapidity Widths: Landau Hydrodynamics}
     \begin{columns}
         \begin{column}{0.48\textwidth}
             \begin{center}
-                \includegraphics[height=0.68\textheight]{day2/day2_landau_width.png}
+                \includegraphics[height=0.62\textheight]{day2/day2_landau_width.png}
             \end{center}
         \end{column}
         \begin{column}{0.52\textwidth}
@@ -372,21 +399,21 @@
                 \begin{itemize}
                     \item The standard deviation $\sigma_y$ of the pion rapidity distribution is calculated from AMPT at 7.7 and 39 GeV.
                     \item Theoretical curves show Landau predictions for the Ideal Gas ($c_s^2 = 1/3$) and Hadron Gas ($c_s^2 = 0.20$).
-                    \item **Observations:** AMPT pion rapidity widths are slightly wider and lie close to the Ideal Gas limit, indicating a stiff equation of state (EoS) in the default AMPT transport model.
+                    \item \textbf{Observations:} AMPT pion rapidity widths are slightly wider and lie close to the Ideal Gas limit, indicating a stiff equation of state (EoS) in the default AMPT transport model.
                 \end{itemize}
             \end{block}
         \end{column}
     \end{columns}
 \end{frame}
 
-% Slide 15: Speed of Sound Plot (Equation of State)
+% Slide 17: Speed of Sound Plot (Equation of State)
 \begin{frame}{Equation of State: Extracted Speed of Sound}
     \begin{center}
         \includegraphics[height=0.75\textheight]{day2/day2_speed_of_sound.png}
     \end{center}
 \end{frame}
 
-% Slide 16: Speed of Sound & EoS Softening Discussion
+% Slide 18: Speed of Sound & EoS Softening Discussion
 \begin{frame}{Equation of State: Speed of Sound \& EoS Softening}
     \begin{block}{Speed of Sound $c_s^2 = \partial P / \partial \epsilon$ (Sahoo Fig. 5.16)}
         \small
@@ -396,16 +423,16 @@
     \begin{block}{Physical Interpretation \& Motivation}
         \footnotesize
         \begin{itemize}
-            \item **The "Softest Point":** Experimental data shows a clear minimum ($c_s^2 \approx 0.15$) at $E_{\mathrm{beam}} \approx 30$ AGeV ($\sqrt{s_{NN}} \approx 7.7$ GeV).
-            \item **Transition Signature:** This minimum is a classic signature of the transition from hadronic matter to QGP (mixed phase or onset of deconfinement).
-            \item **AMPT Default:** Remains stiff ($c_s^2 \approx 0.32$), showing the lack of a physical first-order phase transition in default ZPC/ART.
+            \item \textbf{The ``Softest Point'':} Experimental data shows a clear minimum ($c_s^2 \approx 0.15$) at $E_{\mathrm{beam}} \approx 30$ AGeV ($\sqrt{s_{NN}} \approx 7.7$ GeV).
+            \item \textbf{Transition Signature:} This minimum is a classic signature of the transition from hadronic matter to QGP (mixed phase or onset of deconfinement).
+            \item \textbf{AMPT Default:} Remains stiff ($c_s^2 \approx 0.32$), showing the lack of a physical first-order phase transition in default ZPC/ART.
         \end{itemize}
     \end{block}
 \end{frame}
 
 \section{Hands-On}
 
-% Slide 16: Day 2 Hands-On Laboratory Exercises
+% Slide 19: Day 2 Hands-On Laboratory Exercises
 \begin{frame}{Summary: Day 2 Hands-On Laboratory Exercises}
     \begin{block}{Objective: Analytical \& Data-Driven Rapidity Calculations}
         \small
@@ -417,11 +444,11 @@
     \end{block}
     \begin{enumerate}
         \footnotesize
-        \item **Problem 1:** Calculate center-of-mass energy $\sqrt{s_{NN}}$ for RHIC Energy Scan values.
-        \item **Problem 2:** Prove why collider configurations have a massive kinematic advantage over fixed-target configurations.
-        \item **Problem 3:** Compute and verify Lorentz factors $\gamma$, velocities $\beta$, and beam rapidity limits $y_{\mathrm{beam}}$ for LHC Pb+Pb beams.
-        \item **Problem 4:** Parse AMPT events, extract particle species (pions, kaons, protons), and plot the mass-dependent mid-rapidity dip in $\mathrm{d}N/\mathrm{d}\eta$.
-        \item **Problem 5:** Extract the standard deviation (width $\sigma_y$) of pion rapidity and check compatibility with Landau's ideal gas limit vs. viscous gas models.
+        \item \textbf{Problem 1:} Calculate center-of-mass energy $\sqrt{s_{NN}}$ for RHIC Energy Scan values.
+        \item \textbf{Problem 2:} Prove why collider configurations have a massive kinematic advantage over fixed-target configurations.
+        \item \textbf{Problem 3:} Compute and verify Lorentz factors $\gamma$, velocities $\beta$, and beam rapidity limits $y_{\mathrm{beam}}$ for LHC Pb+Pb beams.
+        \item \textbf{Problem 4:} Parse AMPT events, extract particle species (pions, kaons, protons), and plot the mass-dependent mid-rapidity dip in $\mathrm{d}N/\mathrm{d}\eta$.
+        \item \textbf{Problem 5:} Extract the standard deviation (width $\sigma_y$) of pion rapidity and check compatibility with Landau's ideal gas limit vs.\ viscous gas models.
     \end{enumerate}
 \end{frame}
 

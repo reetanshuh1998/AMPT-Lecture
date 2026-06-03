@@ -340,10 +340,86 @@ def analyze_speed_of_sound():
     save_figure(fig, os.path.join(os.path.dirname(__file__), 'day2_speed_of_sound.png'))
 
 
+def generate_centrality_dndeta_plot():
+    """
+    Generates the centrality dependence of dN_ch/deta plot.
+    Models ALICE Pb+Pb 5.02 TeV style: 5 centrality classes, each showing a
+    flat plateau shape with amplitude scaling with N_part (Glauber model).
+    The shape is self-similar; only the height changes — this is the key
+    physics lesson: centrality changes YIELD not SHAPE.
+    (Inspired by Sahoo Fig. 5.14 / ALICE PbPb 5.02 TeV data pattern)
+    """
+    print("Generating Centrality dN_ch/deta plot...")
+    setup_style()
+    fig, ax = plt.subplots(figsize=(10, 6.5))
+
+    # Centrality classes, approximate N_part values, and colors (warm=central, cool=peripheral)
+    centrality_classes = [
+        {'label': r'$0-5\%$  ($N_\mathrm{part} \approx 383$)',  'N_part': 383, 'color': '#c0392b'},
+        {'label': r'$10-20\%$ ($N_\mathrm{part} \approx 261$)', 'N_part': 261, 'color': '#e67e22'},
+        {'label': r'$30-40\%$ ($N_\mathrm{part} \approx 130$)', 'N_part': 130, 'color': '#27ae60'},
+        {'label': r'$50-60\%$ ($N_\mathrm{part} \approx 55$)',  'N_part': 55,  'color': '#2980b9'},
+        {'label': r'$70-80\%$ ($N_\mathrm{part} \approx 16$)',  'N_part': 16,  'color': '#8e44ad'},
+    ]
+
+    eta_arr = np.linspace(-5.0, 5.0, 400)
+
+    # Reference normalization: most-central N_part=383 → peak dN/deta ~ 1943
+    # (matching ALICE 5.02 TeV 0-5% value ~1943 at eta=0, PRL 116 (2016) 222302)
+    # Yield ∝ N_part (two-component Glauber soft dominance at midcentral-peripheral)
+    # Shape: flat plateau (|eta| < 2) with Gaussian falloff in the fragmentation region
+    N_ref = 383.0
+    peak_ref = 1943.0
+
+    for cent in centrality_classes:
+        # Amplitude scales linearly with N_part / N_ref
+        peak = peak_ref * (cent['N_part'] / N_ref)
+
+        # Shape: flat plateau parametrized as a "super-Gaussian" (rounded box)
+        # Width of plateau shrinks slightly for very peripheral (smaller fireball)
+        plateau_width = 2.0 + 0.3 * (cent['N_part'] / N_ref)  # ~2.0 to ~2.3
+        sigma_fall = 0.9  # Gaussian fall-off width in fragmentation region
+
+        dndeta = np.where(
+            np.abs(eta_arr) <= plateau_width,
+            peak,
+            peak * np.exp(-0.5 * ((np.abs(eta_arr) - plateau_width) / sigma_fall)**2)
+        )
+
+        ax.plot(eta_arr, dndeta, '-', color=cent['color'], linewidth=2.5,
+                label=cent['label'])
+
+    # Formatting
+    ax.set_xlabel(r'Pseudorapidity $\eta$', fontsize=16)
+    ax.set_ylabel(r'$\mathrm{d}N_\mathrm{ch}/\mathrm{d}\eta$', fontsize=16)
+    ax.set_title(
+        r'Centrality Dependence of $\mathrm{d}N_\mathrm{ch}/\mathrm{d}\eta$'
+        '\n'
+        r'Pb+Pb, $\sqrt{s_{NN}} = 5.02$ TeV (ALICE-inspired, Sahoo Fig. 5.14)',
+        fontsize=13
+    )
+    ax.set_xlim(-5.5, 5.5)
+    ax.set_ylim(0, 2400)
+    ax.legend(frameon=True, fontsize=11, loc='upper right')
+    ax.grid(True, linestyle=':', alpha=0.5)
+
+    # Annotate key physics takeaway
+    ax.text(-5.3, 2200,
+            r'$\bullet$ Amplitude $\propto N_\mathrm{part}$: more central $\Rightarrow$ more particles'
+            '\n'
+            r'$\bullet$ Shape (plateau width) set by $\sqrt{s_{NN}}$, not centrality',
+            fontsize=10, va='top',
+            bbox=dict(boxstyle='round,pad=0.4', facecolor='#f8fafc', edgecolor='#cbd5e1', alpha=0.9))
+
+    plt.tight_layout()
+    save_figure(fig, os.path.join(os.path.dirname(__file__), 'day2_alice_centrality_dndeta.png'))
+
+
 if __name__ == "__main__":
     print("Starting Day 2 Data Analysis on subsets...")
     analyze_dndy_vs_dndeta()
     analyze_species_dip()
     analyze_landau_width()
     analyze_speed_of_sound()
+    generate_centrality_dndeta_plot()
     print("Day 2 Analysis complete. Plots saved in day2 folder.")
