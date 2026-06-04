@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QCD String Fragmentation — Plateau Formation</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#06090f;--surf:#0f1623;--surf2:#16202e;--border:#243044;
+  --text:#e2e8f0;--muted:#64748b;
+  --green:#22c55e;--orange:#f97316;--red:#ef4444;
+  --gold:#fbbf24;--blue:#38bdf8;--purple:#a78bfa;
+  --plateau:#22c55e;--frag:#f97316;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
+     min-height:100vh;padding:18px 14px 28px;}
+h1{text-align:center;font-size:1.45rem;font-weight:700;
+   background:linear-gradient(135deg,#22c55e,#38bdf8,#a78bfa);
+   -webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;}
+.sub{text-align:center;color:var(--muted);font-size:.83rem;margin-bottom:16px;}
+.wrap{max-width:1200px;margin:0 auto;}
+
+/* Main grid */
+.main{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.panel{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:10px 12px;}
+.ptitle{font-size:.72rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+        color:var(--muted);margin-bottom:8px;}
+canvas{display:block;border-radius:8px;width:100%;}
+
+/* Controls */
+.ctrls{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.ctrl-panel{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
+.srow{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.slabel{font-size:.8rem;min-width:130px;}
+input[type=range]{flex:1;accent-color:var(--green);cursor:pointer;}
+.sval{font-family:'JetBrains Mono',monospace;font-size:.8rem;min-width:88px;
+      text-align:right;color:var(--green);}
+
+.ebtn-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.ebtn{padding:5px 11px;border-radius:16px;border:1px solid var(--border);
+      background:var(--surf2);color:var(--text);font-size:.75rem;cursor:pointer;transition:all .2s;}
+.ebtn:hover{border-color:var(--green);color:var(--green);}
+.ebtn.on{background:var(--green);color:#000;border-color:var(--green);}
+
+.sbtn{padding:7px 18px;border-radius:8px;border:1px solid var(--blue);
+      background:transparent;color:var(--blue);font-size:.82rem;cursor:pointer;transition:all .2s;}
+.sbtn:hover,.sbtn.on{background:var(--blue);color:#000;}
+
+/* Legend row */
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;}
+.litem{display:flex;align-items:center;gap:6px;font-size:.77rem;color:var(--muted);}
+.ldot{width:12px;height:12px;border-radius:3px;}
+
+/* Info box */
+.infobox{max-width:1200px;margin:14px auto 0;background:var(--surf2);
+         border:1px solid var(--border);border-radius:10px;
+         padding:12px 16px;font-size:.79rem;color:var(--muted);line-height:1.7;}
+.infobox strong{color:var(--text);}
+.fm{font-family:'JetBrains Mono',monospace;color:var(--blue);}
+.gc{color:var(--green);font-weight:600;}
+.oc{color:var(--orange);font-weight:600;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>QCD String Fragmentation &amp; Plateau Formation</h1>
+<p class="sub">Why does the flat region in dN/dy grow wider as collision energy increases?</p>
+
+<div class="main">
+  <!-- LEFT: Collision + String Anatomy -->
+  <div class="panel">
+    <div class="ptitle">Collision View &amp; String Anatomy</div>
+    <canvas id="cLeft" height="480"></canvas>
+  </div>
+  <!-- RIGHT: dN/dy Plot -->
+  <div class="panel">
+    <div class="ptitle">dN/dy Distribution — Rapidity Spectrum</div>
+    <canvas id="cRight" height="480"></canvas>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="ctrls wrap">
+  <div class="ctrl-panel">
+    <div class="ptitle">Energy Control</div>
+    <div class="srow">
+      <span class="slabel">Collision energy √s<sub>NN</sub></span>
+      <input type="range" id="slE" min="0" max="6" value="2" step="0.01">
+      <span class="sval" id="vE">39 GeV</span>
+    </div>
+    <div class="ebtn-row">
+      <button class="ebtn" data-idx="0">7.7 GeV</button>
+      <button class="ebtn" data-idx="1">19.6 GeV</button>
+      <button class="ebtn on" data-idx="2">39 GeV</button>
+      <button class="ebtn" data-idx="3">62.4 GeV</button>
+      <button class="ebtn" data-idx="4">200 GeV</button>
+      <button class="ebtn" data-idx="5">2760 GeV</button>
+      <button class="ebtn" data-idx="6">5020 GeV</button>
+    </div>
+    <button class="sbtn" id="sweepBtn">▶ Sweep energy (watch plateau grow)</button>
+  </div>
+  <div class="ctrl-panel">
+    <div class="ptitle">Legend &amp; Key Physics</div>
+    <div class="legend">
+      <div class="litem"><div class="ldot" style="background:#22c55e"></div>Free string (uniform) → Plateau in dN/dy</div>
+      <div class="litem"><div class="ldot" style="background:#f97316"></div>Fragmentation region (valence quarks) → Falls off</div>
+      <div class="litem"><div class="ldot" style="background:#fbbf24"></div>Beam rapidity ±y<sub>beam</sub></div>
+      <div class="litem"><div class="ldot" style="background:#a78bfa"></div>Produced particles (pions, kaons…)</div>
+    </div>
+    <div style="margin-top:12px;font-size:.8rem;color:var(--muted);line-height:1.8;">
+      <span class="fm">y_beam = cosh⁻¹(√s / 2mₚ)</span><br>
+      <span class="fm">Plateau width ≈ 2·y_beam − 4</span><br>
+      Fragmentation width: <span class="gc">fixed ~1.8 units each side</span><br>
+      String tension κ: <span class="gc">fixed ~1 GeV/fm (QCD constant)</span>
+    </div>
+  </div>
+</div>
+
+<div class="infobox wrap">
+  <strong>What you are seeing:</strong>
+  The <span class="gc">green region</span> is the free middle of the QCD string — it breaks uniformly (same dN per Δy), producing the <strong>flat plateau</strong> in dN/dy.
+  The <span class="oc">orange region</span> is attached to valence quarks of the original nucleons — it fragments differently, producing a <strong>falling distribution</strong>.
+  As energy increases, <span class="fm">y_beam = ln(√s/mₚ)</span> grows, the string gets longer, the free middle gains more Δy slices — each with the <strong>same number of particles from quantum tunneling</strong> — so the <strong>plateau gets wider</strong> while its height barely changes.
+</div>
+</div>
+
+<script>
+// ── Physics ─────────────────────────────────────────────────────────────────
+const mp = 0.938;
+const FRAG_W = 1.8;   // fragmentation region half-width (fixed, QCD)
+const ENERGIES = [7.7, 19.6, 39, 62.4, 200, 2760, 5020];
+
+function yBeam(s) { return Math.acosh(s / (2 * mp)); }
+
+function dNdy(y, s) {
+  const yb = yBeam(s);
+  const pe = yb - FRAG_W;       // plateau edge
+  const ay = Math.abs(y);
+  if (ay > yb + 0.5) return 0;
+  const N0 = 22 * Math.pow(s / 7.7, 0.155);  // height grows slowly ~s^0.15
+  if (ay <= pe) return N0;
+  if (ay <= yb) {
+    const x = (ay - pe) / FRAG_W;
+    return N0 * Math.exp(-4.2 * x * x);
+  }
+  return N0 * Math.exp(-4.2 * Math.pow((ay - pe) / FRAG_W, 2));
+}
+
+// ── State ───────────────────────────────────────────────────────────────────
+let energyIdx  = 2.0;   // continuous slider value
+let sweeping   = false;
+let sweepDir   = 1;
+let collT      = 0;     // collision animation time 0..1
+let particles  = [];    // [{y, life, vy, color}]
+let spawnTimer = 0;
+
+function currentSqrtS() {
+  const i = Math.min(Math.floor(energyIdx), 5);
+  const f = energyIdx - Math.floor(energyIdx);
+  return ENERGIES[i] * Math.pow(ENERGIES[Math.min(i+1,6)] / ENERGIES[i], f);
+}
+
+// ── Canvases ────────────────────────────────────────────────────────────────
+const CL = document.getElementById('cLeft');
+const CR = document.getElementById('cRight');
+const ctxL = CL.getContext('2d');
+const ctxR = CR.getContext('2d');
+
+function setSize() {
+  CL.width = CL.parentElement.clientWidth - 24;
+  CR.width = CR.parentElement.clientWidth - 24;
+  CL.height = CR.height = 480;
+}
+window.addEventListener('resize', setSize);
+setSize();
+
+// ── Controls ────────────────────────────────────────────────────────────────
+const slE = document.getElementById('slE');
+const vE  = document.getElementById('vE');
+
+slE.addEventListener('input', e => {
+  energyIdx = +e.target.value;
+  updateLabel();
+  highlightBtn();
+});
+document.querySelector('.ebtn-row').addEventListener('click', ev => {
+  const btn = ev.target.closest('.ebtn');
+  if (!btn) return;
+  energyIdx = +btn.dataset.idx;
+  slE.value = energyIdx;
+  updateLabel(); highlightBtn();
+});
+document.getElementById('sweepBtn').addEventListener('click', () => {
+  sweeping = !sweeping;
+  const b = document.getElementById('sweepBtn');
+  b.classList.toggle('on', sweeping);
+  b.textContent = sweeping ? '⏸ Stop sweep' : '▶ Sweep energy (watch plateau grow)';
+});
+
+function updateLabel() {
+  const s = currentSqrtS();
+  vE.textContent = s < 100 ? s.toFixed(1)+' GeV' : Math.round(s)+' GeV';
+}
+function highlightBtn() {
+  document.querySelectorAll('.ebtn').forEach((b,i) => {
+    b.classList.toggle('on', Math.abs(i - energyIdx) < 0.3);
+  });
+}
+highlightBtn();
+
+// ── Draw helpers ─────────────────────────────────────────────────────────────
+function lbl(ctx,txt,x,y,col='#e2e8f0',sz=12,align='center') {
+  ctx.save(); ctx.font=`500 ${sz}px Inter,sans-serif`;
+  ctx.fillStyle=col; ctx.textAlign=align; ctx.textBaseline='middle';
+  ctx.fillText(txt,x,y); ctx.restore();
+}
+function arrow(ctx,x1,y1,x2,y2,col,lw=2,hl=10) {
+  const dx=x2-x1,dy=y2-y1,a=Math.atan2(dy,dx);
+  ctx.save(); ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=lw;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hl*Math.cos(a-.4),y2-hl*Math.sin(a-.4));
+  ctx.lineTo(x2-hl*Math.cos(a+.4),y2-hl*Math.sin(a+.4));
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+
+// ── LEFT CANVAS ──────────────────────────────────────────────────────────────
+// Divided into:
+//   Section A (top 200px): Collision spacetime animation
+//   Section B (bottom 280px): String anatomy with histogram bars
+
+function drawLeft(ts) {
+  const W = CL.width, H = CL.height;
+  ctxL.fillStyle='#06090f'; ctxL.fillRect(0,0,W,H);
+
+  const sqrtS = currentSqrtS();
+  const yb    = yBeam(sqrtS);
+  const pe    = yb - FRAG_W;   // plateau edge
+
+  const divY = 210;  // divider between sections
+
+  // ── Section A: Collision Animation ──────────────────────────────────────
+  drawCollision(ctxL, W, divY, sqrtS, yb, ts);
+
+  // Divider
+  ctxL.save();
+  ctxL.strokeStyle='#1e2d42'; ctxL.lineWidth=1; ctxL.setLineDash([4,4]);
+  ctxL.beginPath(); ctxL.moveTo(0,divY); ctxL.lineTo(W,divY); ctxL.stroke();
+  ctxL.restore();
+
+  // ── Section B: String Anatomy ────────────────────────────────────────────
+  drawStringAnatomy(ctxL, W, divY, H, sqrtS, yb, pe);
+}
+
+function drawCollision(ctx, W, H, sqrtS, yb, ts) {
+  const cx = W/2, cy = H/2 - 10;
+
+  // Background grid (subtle)
+  ctx.save(); ctx.strokeStyle='#0d1520'; ctx.lineWidth=.5;
+  for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  ctx.restore();
+
+  // Axis
+  lbl(ctx,'← z (beam axis) →',cx,H-14,'#243044',10);
+
+  // Nucleus radius in canvas
+  const nR = 28;
+  // How far nuclei are from center at current collT
+  const maxDist = W*0.38;
+  const dist = maxDist * Math.max(0, 1 - collT * 2.2);  // approach phase
+  const postDist = collT > 0.5 ? (collT - 0.5) * 1.6 * maxDist * 0.6 : 0; // recede phase
+
+  const nAx = cx - (collT < 0.5 ? dist : postDist);
+  const nBx = cx + (collT < 0.5 ? dist : postDist);
+
+  // Collision flash
+  if (collT > 0.45 && collT < 0.58) {
+    const flash = 1 - Math.abs(collT - 0.515) / 0.065;
+    ctx.save();
+    const fg = ctx.createRadialGradient(cx,cy,0,cx,cy,60*flash);
+    fg.addColorStop(0,`rgba(255,220,80,${0.9*flash})`);
+    fg.addColorStop(1,'rgba(255,220,80,0)');
+    ctx.fillStyle=fg; ctx.beginPath(); ctx.arc(cx,cy,60*flash,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  // String (after collision)
+  if (collT > 0.52) {
+    const strT = Math.min(1,(collT-0.52)/0.35);
+    const sL = nAx + nR*0.5, sR = nBx - nR*0.5;
+    const strLen = sR - sL;
+
+    // Draw string segments color-coded by region
+    const nSegs = 60;
+    for(let i=0;i<nSegs;i++) {
+      const f = i/nSegs;
+      const segX = sL + f * strLen;
+      // Map canvas x to rapidity
+      const y_val = (f - 0.5) * 2 * yb;
+      const isPlat = Math.abs(y_val) < (yb - FRAG_W);
+      const fragFrac = Math.max(0, (Math.abs(y_val)-(yb-FRAG_W))/FRAG_W);
+      const r = isPlat ? 34 : Math.round(34 + 221*fragFrac);
+      const g = isPlat ? 197 : Math.round(197 - 84*fragFrac);
+      const b2 = isPlat ? 94 : 22;
+      const thickness = isPlat ? 5 : Math.max(2, 5 - 3*fragFrac);
+      ctx.save();
+      ctx.strokeStyle=`rgb(${r},${g},${b2})`;
+      ctx.lineWidth=thickness;
+      ctx.shadowColor=`rgb(${r},${g},${b2})`;
+      ctx.shadowBlur=8;
+      ctx.beginPath();
+      ctx.moveTo(segX, cy);
+      ctx.lineTo(segX + strLen/nSegs, cy);
+      ctx.stroke(); ctx.restore();
+    }
+
+    // Particles popping off string (after full stretch)
+    if (collT > 0.72) {
+      ctx.save();
+      for(const p of particles) {
+        const px = sL + (p.y / (2*yb) + 0.5) * strLen;
+        const py = cy + p.vy * (1-p.life);
+        const alpha = p.life;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(px, py, 3.5, 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
+  // Nuclei
+  function drawNucleus(x) {
+    ctx.save();
+    const g = ctx.createRadialGradient(x,cy,0,x,cy,nR);
+    g.addColorStop(0,'#fde68a'); g.addColorStop(0.5,'#f59e0b'); g.addColorStop(1,'#92400e');
+    ctx.fillStyle=g;
+    ctx.shadowColor='#fbbf24'; ctx.shadowBlur=16;
+    ctx.beginPath(); ctx.arc(x,cy,nR,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#fbbf24'; ctx.lineWidth=1.5;
+    ctx.stroke(); ctx.restore();
+    lbl(ctx,'Au',x,cy,'#1a0a00',11);
+  }
+  if (collT < 0.48) {
+    drawNucleus(nAx); drawNucleus(nBx);
+    // Velocity arrows
+    if (dist > 80) {
+      arrow(ctx, nAx+nR+5,cy, nAx+nR+38,cy,'#fbbf24',2,8);
+      arrow(ctx, nBx-nR-5,cy, nBx-nR-38,cy,'#fbbf24',2,8);
+    }
+    // Rapidity labels
+    lbl(ctx,`y = −${yb.toFixed(2)}`,nAx,cy-nR-14,'#94a3b8',10);
+    lbl(ctx,`y = +${yb.toFixed(2)}`,nBx,cy-nR-14,'#94a3b8',10);
+  } else if (collT > 0.58) {
+    drawNucleus(nAx); drawNucleus(nBx);
+    lbl(ctx,'(remnant)',nAx,cy+nR+14,'#64748b',9);
+    lbl(ctx,'(remnant)',nBx,cy+nR+14,'#64748b',9);
+  }
+
+  // Phase label
+  let phaseLabel = '';
+  if (collT < 0.45) phaseLabel = 'Nuclei approaching  →  String about to form';
+  else if (collT < 0.58) phaseLabel = '⚡ Collision!  Color flux tube (string) created';
+  else if (collT < 0.72) phaseLabel = 'String stretching between receding nucleons';
+  else phaseLabel = 'String breaking  →  Particles produced uniformly in rapidity';
+  lbl(ctx, phaseLabel, cx, 16, '#64748b', 10);
+}
+
+function drawStringAnatomy(ctx, W, topY, botY, sqrtS, yb, pe) {
+  const AH = botY - topY;
+  const cx = W/2;
+  // Rapidity axis: map [-maxY, +maxY] to canvas
+  const maxY = Math.max(yb + 1.0, 5.5);
+  const axY  = topY + AH * 0.58;   // vertical center of anatomy
+
+  function rapToX(y) { return cx + (y / maxY) * (W*0.46); }
+  function xToRap(x)  { return (x - cx) / (W*0.46) * maxY; }
+
+  // ── String base line ─────────────────────────────────────────────────────
+  ctx.save();
+  ctx.strokeStyle='#1e2d42'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(W*0.04,axY); ctx.lineTo(W*0.96,axY); ctx.stroke();
+  ctx.restore();
+
+  // ── Histogram bars (Δy slices) ────────────────────────────────────────────
+  const nBins = 48;
+  const dy    = 2 * maxY / nBins;
+  const maxH  = AH * 0.45;  // max bar height
+  const maxN0 = dNdy(0, sqrtS);
+
+  for(let i=0;i<nBins;i++) {
+    const yc  = -maxY + (i + 0.5) * dy;
+    const val = dNdy(yc, sqrtS);
+    const h   = (val / Math.max(maxN0, 1)) * maxH;
+    const x1  = rapToX(yc - dy*0.5);
+    const x2  = rapToX(yc + dy*0.5);
+    const bw  = Math.max(1, x2-x1-1);
+
+    // Color based on region
+    const ay   = Math.abs(yc);
+    const isPl = ay < pe;
+    const fragF= Math.max(0, Math.min(1, (ay-pe)/FRAG_W));
+
+    let r,g,b2;
+    if (isPl) { r=34;g=197;b2=94; }
+    else {
+      r = Math.round(34 + (249-34)*fragF);
+      g = Math.round(197 - (197-115)*fragF);
+      b2= Math.round(94  - (94-22)*fragF);
+    }
+    const col = `rgb(${r},${g},${b2})`;
+
+    ctx.save();
+    ctx.fillStyle = col + '99';
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 0.8;
+    ctx.fillRect(x1, axY - h, bw, h);
+    ctx.strokeRect(x1, axY - h, bw, h);
+
+    // Top dot to show "equal height in plateau"
+    if (isPl && val > 0.2 * maxN0) {
+      ctx.fillStyle = '#22c55e';
+      ctx.shadowColor = '#22c55e'; ctx.shadowBlur = 6;
+      ctx.beginPath(); ctx.arc(x1+bw/2, axY-h-3, 2, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // ── Region labels & braces ────────────────────────────────────────────────
+  const xPe  = rapToX(pe);
+  const xnPe = rapToX(-pe);
+  const xYb  = rapToX(yb);
+  const xnYb = rapToX(-yb);
+  const labelY = topY + AH * 0.25;
+
+  // Fragmentation region braces
+  function brace(x1,x2,y,col,txt) {
+    ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(x1,y); ctx.lineTo(x1,y-8);
+    ctx.lineTo(x2,y-8); ctx.lineTo(x2,y); ctx.stroke();
+    lbl(ctx,txt,(x1+x2)/2,y-18,col,10); ctx.restore();
+  }
+  if (xnYb < xnPe - 20) brace(xnYb, xnPe, labelY, '#f97316', 'FRAG (fixed ~1.8Δy)');
+  if (xYb > xPe + 20)   brace(xPe,  xYb,  labelY, '#f97316', 'FRAG (fixed ~1.8Δy)');
+
+  // Plateau brace
+  const platW = xPe - xnPe;
+  if (platW > 40) {
+    ctx.save(); ctx.strokeStyle='#22c55e'; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(xnPe, labelY); ctx.lineTo(xnPe, labelY-8);
+    ctx.lineTo(xPe,  labelY-8); ctx.lineTo(xPe, labelY);
+    ctx.stroke();
+    lbl(ctx, `FREE PLATEAU ≈ ${Math.max(0,2*pe).toFixed(1)} Δy slices — all EQUAL height`,
+        (xnPe+xPe)/2, labelY-20, '#22c55e', 10);
+    ctx.restore();
+  }
+
+  // ── y_beam dashed markers ─────────────────────────────────────────────────
+  function dashed_vline(x, col, label, lpos) {
+    ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=1.2; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(x, topY+10); ctx.lineTo(x, botY-10); ctx.stroke();
+    lbl(ctx, label, x, lpos, col, 10); ctx.restore();
+  }
+  dashed_vline(xYb,  '#fbbf24', `+y_b=${yb.toFixed(2)}`, topY+20);
+  dashed_vline(xnYb, '#fbbf24', `−y_b`, topY+20);
+
+  // ── Rapidity axis ticks ───────────────────────────────────────────────────
+  ctx.save(); ctx.strokeStyle='#334155'; ctx.lineWidth=1;
+  for(let y=-5;y<=5;y++) {
+    if (Math.abs(y) > maxY) continue;
+    const tx = rapToX(y);
+    ctx.beginPath(); ctx.moveTo(tx, axY); ctx.lineTo(tx, axY+6); ctx.stroke();
+    lbl(ctx, y.toString(), tx, axY+14, '#475569', 10);
+  }
+  ctx.restore();
+  lbl(ctx, 'Rapidity y', cx, botY-10, '#334155', 10);
+  lbl(ctx, '← Equal Δy slices: same particles per slice in plateau →',
+      cx, axY+30, '#1e3a2e', 10);
+
+  // ── Energy label ──────────────────────────────────────────────────────────
+  const s = sqrtS < 100 ? sqrtS.toFixed(1) : Math.round(sqrtS);
+  lbl(ctx, `√s_NN = ${s} GeV  |  y_beam = ${yb.toFixed(2)}  |  Plateau width ≈ ${Math.max(0,2*pe).toFixed(2)} units`,
+      cx, topY+8, '#3d5c6e', 10);
+}
+
+// ── RIGHT CANVAS: dN/dy plot ──────────────────────────────────────────────────
+function drawRight() {
+  const W = CR.width, H = CR.height;
+  const sqrtS = currentSqrtS();
+  const yb = yBeam(sqrtS);
+
+  ctxR.fillStyle='#06090f'; ctxR.fillRect(0,0,W,H);
+
+  // Plot margins
+  const ml=58, mr=24, mt=44, mb=52;
+  const pw = W-ml-mr, ph = H-mt-mb;
+
+  const yMax_axis = 9.5;  // rapidity axis range
+  const nMax_axis = 22 * Math.pow(5020/7.7, 0.155) * 1.1;  // max dN/dy
+
+  function yToX(y) { return ml + (y + yMax_axis) / (2*yMax_axis) * pw; }
+  function nToY(n) { return mt + ph - (n / nMax_axis) * ph; }
+
+  // ── Plot background ────────────────────────────────────────────────────────
+  ctxR.save();
+  ctxR.fillStyle='#0a1118'; ctxR.fillRect(ml,mt,pw,ph);
+  ctxR.strokeStyle='#1a2436'; ctxR.lineWidth=0.5;
+  for(let y=-9;y<=9;y+=1){
+    const x=yToX(y);
+    ctxR.beginPath(); ctxR.moveTo(x,mt); ctxR.lineTo(x,mt+ph); ctxR.stroke();
+  }
+  for(let n=0;n<=nMax_axis;n+=50){
+    const y2=nToY(n);
+    ctxR.beginPath(); ctxR.moveTo(ml,y2); ctxR.lineTo(ml+pw,y2); ctxR.stroke();
+  }
+  ctxR.restore();
+
+  // ── Ghost curves for reference energies ───────────────────────────────────
+  const refEnergies = [7.7, 39, 200, 5020];
+  const refCols     = ['#22c55e22','#38bdf822','#a78bfa22','#f4727222'];
+  for(let ri=0; ri<refEnergies.length; ri++) {
+    const rs = refEnergies[ri];
+    if (Math.abs(rs - sqrtS) < 2) continue;
+    ctxR.save(); ctxR.strokeStyle=refCols[ri]; ctxR.lineWidth=1.2; ctxR.setLineDash([3,3]);
+    ctxR.beginPath();
+    let first=true;
+    for(let y=-yMax_axis; y<=yMax_axis; y+=0.1) {
+      const n = dNdy(y, rs);
+      const cx2=yToX(y), cy2=nToY(n);
+      if (first){ ctxR.moveTo(cx2,cy2); first=false; } else ctxR.lineTo(cx2,cy2);
+    }
+    ctxR.stroke(); ctxR.restore();
+    // Label at peak
+    const peakY = nToY(dNdy(0,rs));
+    const label = rs<100 ? rs+'GeV' : Math.round(rs)+'GeV';
+    lbl(ctxR, label, yToX(0)+18, peakY, refCols[ri].slice(0,7)+'aa', 9);
+  }
+
+  // ── Shaded regions under current curve ────────────────────────────────────
+  const pe = yBeam(sqrtS) - FRAG_W;
+  // Plateau fill (green)
+  ctxR.save();
+  ctxR.fillStyle='rgba(34,197,94,0.12)';
+  ctxR.beginPath();
+  ctxR.moveTo(yToX(-pe), nToY(0));
+  for(let y=-pe; y<=pe; y+=0.05) {
+    ctxR.lineTo(yToX(y), nToY(dNdy(y, sqrtS)));
+  }
+  ctxR.lineTo(yToX(pe), nToY(0));
+  ctxR.closePath(); ctxR.fill(); ctxR.restore();
+
+  // Fragmentation fills (orange)
+  function fillFrag(y1, y2) {
+    ctxR.save(); ctxR.fillStyle='rgba(249,115,22,0.12)';
+    ctxR.beginPath(); ctxR.moveTo(yToX(y1), nToY(0));
+    for(let y=y1; y<=y2; y+=0.05) ctxR.lineTo(yToX(y), nToY(dNdy(y, sqrtS)));
+    ctxR.lineTo(yToX(y2), nToY(0)); ctxR.closePath(); ctxR.fill(); ctxR.restore();
+  }
+  fillFrag(-yb-0.3, -pe); fillFrag(pe, yb+0.3);
+
+  // ── Main dN/dy curve ──────────────────────────────────────────────────────
+  ctxR.save(); ctxR.strokeStyle='#38bdf8'; ctxR.lineWidth=2.8;
+  ctxR.shadowColor='#38bdf8'; ctxR.shadowBlur=8;
+  ctxR.beginPath();
+  let first=true;
+  for(let y=-yMax_axis; y<=yMax_axis; y+=0.08) {
+    const n = dNdy(y, sqrtS);
+    const cx2=yToX(y), cy2=nToY(n);
+    if(first){ ctxR.moveTo(cx2,cy2); first=false; } else ctxR.lineTo(cx2,cy2);
+  }
+  ctxR.stroke(); ctxR.restore();
+
+  // ── Plateau level dashed line ─────────────────────────────────────────────
+  const N0 = dNdy(0, sqrtS);
+  ctxR.save(); ctxR.strokeStyle='#22c55e'; ctxR.lineWidth=1; ctxR.setLineDash([6,4]);
+  ctxR.globalAlpha=0.7;
+  ctxR.beginPath(); ctxR.moveTo(yToX(-pe), nToY(N0)); ctxR.lineTo(yToX(pe), nToY(N0));
+  ctxR.stroke(); ctxR.restore();
+  lbl(ctxR, `dN/dy plateau = ${Math.round(N0)}`, yToX(pe)+2, nToY(N0)-10, '#22c55e', 10, 'left');
+
+  // ── y_beam markers ────────────────────────────────────────────────────────
+  function vdash(y, col, lbl_txt) {
+    ctxR.save(); ctxR.strokeStyle=col; ctxR.lineWidth=1.3; ctxR.setLineDash([5,4]);
+    const x=yToX(y);
+    ctxR.beginPath(); ctxR.moveTo(x,mt); ctxR.lineTo(x,mt+ph); ctxR.stroke();
+    lbl(ctxR, lbl_txt, x, mt+8, col, 10); ctxR.restore();
+  }
+  vdash(yb, '#fbbf24', `+y_b`);
+  vdash(-yb,'#fbbf24', `−y_b`);
+  vdash(pe, '#22c55e44', '');
+  vdash(-pe,'#22c55e44', '');
+
+  // ── Plateau width annotation ───────────────────────────────────────────────
+  if (pe > 0.5) {
+    const arrY = mt + ph*0.88;
+    ctxR.save(); ctxR.strokeStyle='#22c55e'; ctxR.lineWidth=1.5;
+    ctxR.beginPath();
+    ctxR.moveTo(yToX(-pe), arrY); ctxR.lineTo(yToX(pe), arrY);
+    ctxR.stroke();
+    ctxR.beginPath(); ctxR.moveTo(yToX(-pe), arrY-5); ctxR.lineTo(yToX(-pe), arrY+5); ctxR.stroke();
+    ctxR.beginPath(); ctxR.moveTo(yToX(pe),  arrY-5); ctxR.lineTo(yToX(pe),  arrY+5); ctxR.stroke();
+    lbl(ctxR, `Plateau ≈ ${(2*pe).toFixed(1)} units`, yToX(0), arrY-10, '#22c55e', 11);
+    ctxR.restore();
+  }
+
+  // ── Axes ──────────────────────────────────────────────────────────────────
+  ctxR.save(); ctxR.strokeStyle='#2d4060'; ctxR.lineWidth=1.5;
+  ctxR.beginPath(); ctxR.moveTo(ml,mt); ctxR.lineTo(ml,mt+ph); ctxR.lineTo(ml+pw,mt+ph); ctxR.stroke();
+  ctxR.restore();
+  // Ticks x
+  ctxR.save(); ctxR.strokeStyle='#334155'; ctxR.lineWidth=1;
+  for(let y=-9;y<=9;y+=1){
+    const x=yToX(y);
+    ctxR.beginPath(); ctxR.moveTo(x,mt+ph); ctxR.lineTo(x,mt+ph+5); ctxR.stroke();
+    if(y%2===0) lbl(ctxR, y.toString(), x, mt+ph+16, '#475569', 10);
+  }
+  // Ticks y
+  for(let n=0;n<=nMax_axis;n+=50){
+    const y2=nToY(n);
+    ctxR.beginPath(); ctxR.moveTo(ml,y2); ctxR.lineTo(ml-5,y2); ctxR.stroke();
+    if(n%100===0) lbl(ctxR, n.toString(), ml-14, y2, '#475569', 9, 'right');
+  }
+  ctxR.restore();
+
+  lbl(ctxR, 'Rapidity  y', ml+pw/2, H-12, '#334155', 11);
+  // Rotated y-axis label
+  ctxR.save(); ctxR.translate(13, mt+ph/2);
+  ctxR.rotate(-Math.PI/2); ctxR.font='11px Inter,sans-serif';
+  ctxR.fillStyle='#334155'; ctxR.textAlign='center'; ctxR.textBaseline='middle';
+  ctxR.fillText('dN/dy', 0, 0); ctxR.restore();
+
+  // ── Title ─────────────────────────────────────────────────────────────────
+  const sLabel = sqrtS<100 ? sqrtS.toFixed(1) : Math.round(sqrtS);
+  lbl(ctxR, `dN/dy  —  √s_NN = ${sLabel} GeV`, ml+pw/2, mt-16, '#94a3b8', 12);
+  lbl(ctxR, '(faded: 7.7, 39, 200, 5020 GeV for comparison)', ml+pw/2, mt-4, '#334155', 9);
+}
+
+// ── Particle spawning ─────────────────────────────────────────────────────────
+function spawnParticles(sqrtS) {
+  const yb = yBeam(sqrtS);
+  const pe = yb - FRAG_W;
+
+  // Spawn 3 particles in plateau, 1 in fragmentation
+  const regions = [
+    { yn: () => (Math.random()-0.5)*2*pe,   col: '#a78bfa' },
+    { yn: () => (Math.random()-0.5)*2*pe,   col: '#22c55e' },
+    { yn: () => (Math.random()-0.5)*2*pe,   col: '#38bdf8' },
+    { yn: () => (Math.random() > 0.5 ? 1 : -1) * (pe + Math.random()*FRAG_W*0.8), col: '#f97316' },
+  ];
+
+  for(const r of regions) {
+    const y = r.yn();
+    if (Math.abs(y) > yb + 0.1) continue;
+    const vy = (Math.random() > 0.5 ? 1 : -1) * (30 + Math.random()*50);
+    particles.push({ y, life:1.0, vy, color:r.col });
+  }
+  // Remove dead particles
+  particles = particles.filter(p => p.life > 0.05);
+}
+
+// ── Main loop ─────────────────────────────────────────────────────────────────
+let lastTs = 0;
+function loop(ts) {
+  const dt = Math.min((ts - lastTs)/1000, 0.05);
+  lastTs = ts;
+
+  // Sweep energy
+  if (sweeping) {
+    energyIdx += sweepDir * dt * 0.4;
+    if (energyIdx >= 6) sweepDir = -1;
+    if (energyIdx <= 0) sweepDir =  1;
+    slE.value = energyIdx;
+    updateLabel(); highlightBtn();
+  }
+
+  // Collision animation (always cycling)
+  collT += dt * 0.18;
+  if (collT > 1.4) { collT = 0; particles = []; }
+
+  // Spawn particles during breaking phase
+  if (collT > 0.72) {
+    spawnTimer -= dt;
+    if (spawnTimer < 0) {
+      spawnParticles(currentSqrtS());
+      spawnTimer = 0.18;
+    }
+    // Age particles
+    for(const p of particles) p.life -= dt * 0.7;
+    particles = particles.filter(p => p.life > 0);
+  }
+
+  drawLeft(ts);
+  drawRight();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
