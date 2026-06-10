@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Van Hove Phase Transition Signature</title>
+<title>Van Hove Collectivity & Phase Behavior</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -59,8 +59,8 @@ input[type=range]{flex:1;accent-color:var(--red);cursor:pointer;}
 </head>
 <body>
 <div class="wrap">
-<h1>Van Hove Phase Transition Signature</h1>
-<p class="sub">Sweep the multiplicity density (representing entropy density) to see how the average transverse momentum (representing temperature) reveals the QCD phase transition</p>
+<h1>Van Hove Collectivity & Phase Behavior</h1>
+<p class="sub">Sweep the multiplicity density (representing entropy density) to see how the average transverse momentum (representing temperature) reveals qualitative collectivity and phase behavior</p>
 
 <div class="main">
   <!-- LEFT: Fireball Microscopic State -->
@@ -90,7 +90,7 @@ input[type=range]{flex:1;accent-color:var(--red);cursor:pointer;}
   </div>
   
   <div class="ctrl-panel">
-    <div class="ptitle">Phase Transition Scenario</div>
+    <div class="ptitle">Phase Behavior Scenario</div>
     <div class="btn-row">
       <button class="btn on" id="btnFirstOrder">1st-Order Transition (with Plateau)</button>
       <button class="btn" id="btnCrossover">Smooth Crossover</button>
@@ -104,14 +104,14 @@ input[type=range]{flex:1;accent-color:var(--red);cursor:pointer;}
 
 <div class="infobox wrap">
   <strong>What you are seeing:</strong>
-  In 1982, Leon Van Hove proposed that plotting average transverse momentum <span class="fm">&lt;p_T&gt;</span> (which acts as a proxy for the fireball's **temperature**) as a function of the charged particle multiplicity density <span class="fm">dN_ch/dη</span> (which acts as a proxy for **entropy density**) provides a clear signature of QGP formation:
+  In 1982, Leon Van Hove proposed that plotting average transverse momentum <span class="fm">&lt;p_T&gt;</span> (proxy for **temperature**) vs. multiplicity density <span class="fm">dN_ch/dη</span> (proxy for **entropy density**) could signal the QCD phase transition. Standard transport models like AMPT do not contain a true thermodynamic first-order transition EoS, but the plateau behavior here represents a qualitative toy model of collectivity:
   <br>
-  1. <span class="hc">Hadron Gas Phase (dN_ch/dη &lt; 30)</span>: As energy increases, the hadronic gas absorbs energy and heats up rapidly. The pressure rises, causing <span class="fm">&lt;p_T&gt;</span> to increase.
+  1. <span class="hc">Low-Density Phase (dN_ch/dη &lt; 30)</span>: Initially, the temperature (or <span class="fm">&lt;p_T&gt;</span>) increases rapidly as energy is deposited and the system heats up.
   <br>
-  2. <span class="mc">Mixed Phase / Phase Coexistence (30 &lt; dN_ch/dη &lt; 75)</span>: As the fireball reaches the critical temperature <span class="fm">T_c ≈ 155 MeV</span>, hadrons begin to melt into free quarks and gluons. Like boiling water, adding energy (which increases multiplicity/entropy) does not increase the temperature; the latent heat of deconfinement is absorbed. This produces the **characteristic flat plateau** in <span class="fm">&lt;p_T&gt;</span>.
+  2. <span class="mc">Coexistence Region / Plateau (30 &lt; dN_ch/dη &lt; 75)</span>: In a first-order transition scenario, the system enters a mixed phase at critical temperature <span class="fm">T_c</span> where added energy goes into latent heat of deconfinement (melting hadrons to quarks/gluons) instead of heating, producing a flat plateau. In standard AMPT, a similar qualitative plateau can emerge dynamically from partonic and hadronic scattering rather than a thermodynamic phase transition.
   <br>
-  3. <span class="qc">QGP Phase (dN_ch/dη &gt; 75)</span>: Once all hadrons have melted, adding more energy heats the pure Quark-Gluon Plasma, causing the temperature and <span class="fm">&lt;p_T&gt;</span> to rise again.
-  <br><strong>Compare:</strong> Toggle between **Crossover** (a smooth rise representing high-energy LHC collisions where there is no sharp phase boundary) and **No QGP** (temperature rises indefinitely, which would happen if confinement was never broken).
+  3. <span class="qc">Deconfined QGP Phase (dN_ch/dη &gt; 75)</span>: Once transition/melting is complete, further energy input heats the pure QGP phase, causing the temperature and <span class="fm">&lt;p_T&gt;</span> to rise again.
+  <br><strong>Compare Scenarios:</strong> Toggle between the first-order plateau, a **Smooth Crossover** (more representative of high-energy LHC runs without a sharp phase boundary), and **No Transition** (linear temperature rise).
 </div>
 </div>
 

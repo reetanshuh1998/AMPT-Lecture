@@ -246,7 +246,7 @@
             <div class="panel-section-title">Beam Parameters</div>
             
             <div class="input-group">
-                <label>Bunch Frequency (f) <span class="value" id="val-f">11.2 kHz</span></label>
+                <label>Bunch Rev. Frequency (f) [scaled for viz] <span class="value" id="val-f">11.2 kHz</span></label>
                 <input type="range" id="param-f" min="1" max="150" value="112" step="1">
             </div>
 
@@ -317,6 +317,9 @@
                 </div>
                 <p>
                     Slide the controls to focus the beam (reducing beam size $\sigma_x \sigma_y$) or increase the bunch intensity ($N_p$) to see the collision frequency and track densities soar. Watch how rarer processes (like Higgs Boson production) require significantly higher Integrated Luminosity to accumulate even a few counts!
+                </p>
+                <p style="font-size: 0.78rem; margin-top: 5px; color: var(--text-muted);">
+                    *Note: The bunch crossing frequency in the animation is scaled down by a factor of ~10,000 for visualization purposes so individual bunch crossings are discernible to the eye.
                 </p>
             </div>
         </div>
@@ -420,7 +423,7 @@
             const physics = getPhysics();
 
             // Update UI Labels
-            lblF.innerText = `${(parseFloat(inputF.value) * 100).toFixed(0)} Hz`;
+            lblF.innerText = `${(parseFloat(inputF.value) / 10).toFixed(1)} kHz`;
             lblNb.innerText = inputNb.value;
             lblNp.innerText = `${parseFloat(inputNp.value).toFixed(2)}e11`;
             lblSigma.innerText = `${inputSigma.value} μm`;
