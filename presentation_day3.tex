@@ -44,7 +44,7 @@
 }
 
 % Presentation Details
-\title[AMPT Course --- Day 3]{Day 3: Kinematics III: Transverse Spectra, Feynman Scaling, and Radial Flow}
+\title[AMPT Course --- Day 3]{Day 3: Kinematics III \& Collectivity: Transverse Spectra, Feynman Scaling, and Radial Flow}
 \subtitle{14-Day Hands-on Course on Heavy-Ion Phenomenology}
 \author[MSc-Lecture Series]{Lecture}
 \institute[NIT-J, HEP-119]{NIT-J, HEP-119}
@@ -66,7 +66,7 @@
             \begin{itemize}
                 \item Day 1: Foundations of Relativistic Kinematics \& Experimental HEP
                 \item Day 2: Kinematics I \& II: Rapidity \& Pseudorapidity in Detail
-                \item \textbf{Day 3: Kinematics III: Transverse Spectra, Feynman Scaling \& Radial Flow}
+                \item \textbf{Day 3: Kinematics III \& Collectivity: Transverse Spectra, Feynman Scaling \& Radial Flow}
                 \item Day 4: Kinematics IV: Coordinate Calculator implementations
             \end{itemize}
             \vspace{0.05cm}
@@ -164,8 +164,8 @@
               \[ \sqrt{s_{\mathrm{FT}}} = \sqrt{m_p^2 + m_t^2 + 2 E_{\mathrm{lab}} m_t} \approx \sqrt{2 E_{\mathrm{lab}} m_t} \]
               Much of the incoming beam energy is wasted as the center-of-mass frame itself recoils forward at high velocity. $\sqrt{s}$ scales slowly ($\propto \sqrt{E_{\mathrm{lab}}}$).
             \item \textbf{Collider Configurations}:
-              \[ \sqrt{s_{\mathrm{coll}}} = 2 E_{\mathrm{lab}} \]
-              Two beams collide head-on. The net momentum is zero, meaning the center-of-mass frame is stationary. \textbf{All beam energy is available for particle creation}. $\sqrt{s}$ grows linearly with beam energy ($\propto E_{\mathrm{lab}}$).
+              \[ \sqrt{s_{\mathrm{coll}}} \approx 2 E_{\mathrm{beam}} \]
+              For ultrarelativistic equal beams colliding head-on, $\sqrt{s_{\mathrm{coll}}} \approx 2E_{\mathrm{beam}}$ (where $m \ll E$). The net momentum is zero, meaning the center-of-mass frame is stationary. \textbf{All beam energy is available for particle creation}, growing linearly with beam energy.
         \end{itemize}
     \end{block}
 \end{frame}
@@ -195,7 +195,7 @@
 \begin{frame}{The Feynman Scaling Variable $x_F$}
     \begin{block}{Feynman-x Definition (Sahoo Eq. 5.192)}
         \small
-        The \textbf{Feynman-x variable} ($x_F$) represents the fraction of the maximum longitudinal momentum carried by a produced particle in the center-of-mass system:
+        The \textbf{Feynman-x variable} ($x_F$) represents the fraction of the maximum longitudinal momentum carried by a produced particle in the center-of-mass system. Under a high-energy, negligible-mass approximation ($p_{L,\mathrm{max}}^* \approx \sqrt{s}/2$):
         \[ x_F = \frac{p_L^*}{p_L^*(\mathrm{max})} \approx \frac{2p_z^*}{\sqrt{s}} \]
         Where $p_z^*$ is the longitudinal momentum in the center-of-mass frame, and $\sqrt{s}$ is the total collision energy.
     \end{block}
@@ -223,8 +223,8 @@
             \end{block}
             \begin{block}{Verification with AMPT Data}
                 \begin{itemize}
-                    \item Plotting $\mathrm{d}N/\mathrm{d}x_F$ at $\sqrt{s_{NN}} = 7.7$ and $39$ GeV shows scaling overlap at higher $|x_F|$ values (fragmentation region).
-                    \item The divergence at $x_F \approx 0$ reflects the logarithmic growth of the central rapidity plateau height as energy increases.
+                    \item Plotting $\mathrm{d}N/\mathrm{d}x_F$ at $\sqrt{s_{NN}} = 7.7$ and $39$ GeV shows qualitative scaling overlap at higher $|x_F|$ (fragmentation region) for the analyzed pion sample.
+                    \item The rapid rise near $x_F \approx 0$ reflects the growth of the central rapidity plateau height as collision energy increases.
                 \end{itemize}
             \end{block}
         \end{column}
@@ -324,13 +324,14 @@
 
 % Slide 9b: Mass dependent slopes
 \begin{frame}{Collective Radial Flow: Mass-Dependent Slopes}
-    \begin{block}{Extracted Temperature Superposition (Sahoo Eq. 5.222)}
-        For low transverse momenta, the average kinetic energy consists of a thermal term and a collective mass-dependent term:
+    \begin{block}{Pedagogical Radial Flow Toy Models (Sahoo Eq. 5.222)}
+        For low transverse momenta, a non-relativistic heuristic model approximates the average kinetic energy as a superposition of thermal and collective terms:
         \[ \langle K.E. \rangle = \frac{3}{2} k_B T_{th} + \frac{1}{2} m_0 v_{flow}^2 \]
-        This manifests as a mass-dependent effective slope parameter $T_{eff}$:
+        This manifests as an approximate mass-dependent effective slope parameter $T_{eff}$:
         \[ T_{eff} = T_{th} + \frac{1}{2} m_0 \langle v_{flow} \rangle^2 \]
-        For highly relativistic particles or high-$p_T$ limits, the relativistic Doppler formula is used (Sahoo Eq. 5.224):
+        For highly relativistic particles or high-$p_T$ limits, an intuitive Doppler-like estimate is sometimes used (Sahoo Eq. 5.224):
         \[ T_{eff} = T_{th} \sqrt{\frac{1 + v_{flow}}{1 - v_{flow}}} \]
+        Note: These are simplified heuristic models; experimental extractions typically employ a full 3D blast-wave formulation.
     \end{block}
     \begin{alertblock}{Mass-Dependent Slopes Simulator}
         Open \texttt{animations/09\_pt\_mt\_spectra\_analyzer.html} in your browser and sweep the radial velocity slider to observe how slope parameters increase with mass.
@@ -440,7 +441,7 @@
 \end{frame}
 
 % Slide 13: Van Hove Signature AMPT Validation
-\begin{frame}{AMPT: The Van Hove Phase Transition Signature}
+\begin{frame}{AMPT: The Van Hove-like Collectivity Signature}
     \begin{columns}
         \begin{column}{0.52\textwidth}
             \begin{center}
@@ -451,14 +452,15 @@
             \footnotesize
             \begin{block}{Observations in AMPT default model}
                 \begin{itemize}
-                    \item \textbf{Low multiplicity}: Rapid rise of $\langle p_T \rangle$ indicating hadronic gas warming and expanding.
-                    \item \textbf{High multiplicity}: Clear flattening or plateau at $\langle p_T \rangle \approx 0.41$ GeV/c.
+                    \item \textbf{Low multiplicity}: Rapid rise of $\langle p_T \rangle$ reflecting initial heating and expansion of the system.
+                    \item \textbf{High multiplicity}: Qualitative flattening or plateau at $\langle p_T \rangle \approx 0.41$ GeV/c.
                 \end{itemize}
             \end{block}
             \begin{block}{Do we see a Phase Transition in AMPT?}
-                Standard AMPT with string melting does not contain an explicit first-order phase transition Equation of State (EoS).
+                Standard AMPT does not contain an explicit thermodynamic first-order phase transition EoS.
                 \begin{itemize}
-                    \item However, modified versions incorporating a **Chiral Quark-Meson Model** (CQMF) or explicit first-order phase transition EoS show a distinct flat plateau in $\langle p_T \rangle$ due to latent heat absorption.
+                    \item This qualitative plateau can arise from parton cascade dynamics, hadronic rescattering, and saturation effects rather than a true phase transition.
+                    \item However, modified AMPT versions incorporating explicit first-order transition models (e.g., Chiral Quark-Meson Model) display a flatter plateau from latent heat absorption.
                 \end{itemize}
             \end{block}
             \begin{alertblock}{Interactive Phase Simulator}
