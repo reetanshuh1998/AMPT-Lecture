@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feynman Scaling & Rapidity Plateau Simulator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #06090f;
+            --panel-bg: rgba(13, 20, 38, 0.6);
+            --border-color: rgba(56, 139, 253, 0.25);
+            --accent-blue: #58a6ff;
+            --accent-glow: #1f6feb;
+            --text-color: #c9d1d9;
+            --text-muted: #8b949e;
+            --card-bg: rgba(22, 27, 34, 0.8);
+            --neon-red: #ff7b72;
+            --neon-green: #7ee787;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        header {
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(88, 166, 255, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        header p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            flex: 1;
+        }
+
+        .control-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .panel-section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #ffffff;
+            border-left: 3px solid var(--accent-blue);
+            padding-left: 8px;
+            margin-bottom: 5px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .input-group label span.value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--accent-glow);
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .btn-toggle-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-toggle {
+            flex: 1;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .btn-toggle.active {
+            background: rgba(56, 139, 253, 0.15);
+            border-color: var(--accent-blue);
+            color: #ffffff;
+            box-shadow: 0 0 8px rgba(88, 166, 255, 0.2);
+        }
+
+        .btn-toggle:hover {
+            border-color: var(--accent-blue);
+            color: #ffffff;
+        }
+
+        .dashboard {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .dash-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+            padding-bottom: 8px;
+        }
+
+        .dash-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .dash-label {
+            color: var(--text-muted);
+        }
+
+        .dash-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .visualization-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: rgba(5, 8, 16, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            flex: 1;
+            min-height: 480px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .info-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px 24px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .info-card h3 {
+            color: #ffffff;
+            margin-bottom: 8px;
+            font-size: 1.05rem;
+        }
+
+        .physics-formula {
+            display: block;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-blue);
+            margin: 10px 0;
+            font-size: 0.95rem;
+            color: #ffffff;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>⚛️ Feynman Scaling & Rapidity Plateau Simulator</h1>
+        <p>Interactive visualization showing how longitudinal distributions scale with energy and generate the rapidity plateau.</p>
+    </header>
+
+    <div class="main-container">
+        <!-- Sidebar Controls -->
+        <div class="control-panel">
+            <div class="panel-section-title">Collision Energy</div>
+            
+            <div class="input-group">
+                <label>Center of Mass Energy (√s) <span class="value" id="val-sqrts">39.0 GeV</span></label>
+                <input type="range" id="param-sqrts" min="5" max="200" value="39" step="1">
+            </div>
+
+            <div class="panel-section-title">Plot Settings</div>
+            
+            <div class="input-group">
+                <label>Coordinate Base</label>
+                <div class="btn-toggle-group">
+                    <button class="btn-toggle active" id="btn-base-y" onclick="setBase('y')">Rapidity (y)</button>
+                    <button class="btn-toggle" id="btn-base-xf" onclick="setBase('xf')">Feynman (x_F)</button>
+                </div>
+            </div>
+
+            <div class="panel-section-title">Kinematic Quantities</div>
+            <div class="dashboard">
+                <div class="dash-row">
+                    <span class="dash-label">Beam Rapidity (y_beam):</span>
+                    <span class="dash-value" id="dash-ybeam">±3.73</span>
+                </div>
+                <div class="dash-row">
+                    <span class="dash-label">Plateau Width (Δy):</span>
+                    <span class="dash-value" id="dash-plateau-width">4.50</span>
+                </div>
+                <div class="dash-row">
+                    <span class="dash-label">Mid-Rapidity dN/dy:</span>
+                    <span class="dash-value" id="dash-dn-dy">32.4</span>
+                </div>
+                <div class="dash-row">
+                    <span class="dash-label">Peak Feynman x_F Position:</span>
+                    <span class="dash-value" id="dash-xf-pos">0.00 (Central)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Animation Canvas and Info -->
+        <div class="visualization-area">
+            <div class="canvas-container">
+                <canvas id="scalingCanvas"></canvas>
+            </div>
+            
+            <div class="info-card">
+                <h3>Longitudinal Scale-Invariance & Rapidity Plateau</h3>
+                <p>
+                    Feynman scaling describes the scaling behavior of longitudinal momentum distributions at high energies. Toggle between <strong>Rapidity (y)</strong> and <strong>Feynman ($x_F$)</strong> plots. Notice how:
+                </p>
+                <div class="physics-formula">
+                    y = sinh⁻¹(x_F * √s / m_T)
+                </div>
+                <p>
+                    As you raise the collision energy $\sqrt{s}$, the rapidity distribution extends outward, and a flat **rapidity plateau** develops at mid-rapidity. In contrast, on the Feynman $x_F$ basis, the distributions at different energies scale (superimpose) in the fragmentation regions ($|x_F| \sim 0.1 \to 0.8$), while the expanding rapidity plateau is compressed into a narrow peak at $x_F \approx 0$.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('scalingCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Resize handler
+        function resize() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        const inputSqrts = document.getElementById('param-sqrts');
+        const lblSqrts = document.getElementById('val-sqrts');
+
+        // Dashboards
+        const dashYbeam = document.getElementById('dash-ybeam');
+        const dashPlateauWidth = document.getElementById('dash-plateau-width');
+        const dashDnDy = document.getElementById('dash-dn-dy');
+
+        let plotBase = 'y'; // 'y' or 'xf'
+
+        function setBase(base) {
+            plotBase = base;
+            document.getElementById('btn-base-y').classList.toggle('active', base === 'y');
+            document.getElementById('btn-base-xf').classList.toggle('active', base === 'xf');
+        }
+
+        // Particle generator simulation
+        function getPhysics() {
+            const sqrts = parseFloat(inputSqrts.value);
+            const m_proton = 0.938;
+            const m_pion = 0.140;
+            const pT_avg = 0.35;
+            const mT = Math.sqrt(pT_avg**2 + m_pion**2);
+
+            // Beam rapidity: y_beam = acosh(sqrt_s / 2 / m_proton)
+            const y_beam = Math.acosh(sqrts / (2 * m_proton));
+            
+            // Plateau height grows logarithmically
+            const plateau_height = 1.8 * Math.log(sqrts / m_proton);
+            const plateau_width = Math.max(0, 2 * y_beam - 3.0);
+
+            return { sqrts, y_beam, plateau_height, plateau_width, mT };
+        }
+
+        // Main Draw loop
+        function draw() {
+            const p = getPhysics();
+
+            // Update Labels
+            lblSqrts.innerText = `${p.sqrts.toFixed(1)} GeV`;
+            dashYbeam.innerText = `±${p.y_beam.toFixed(2)}`;
+            dashPlateauWidth.innerText = p.plateau_width.toFixed(2);
+            dashDnDy.innerText = p.plateau_height.toFixed(1);
+
+            // Clear background
+            ctx.fillStyle = '#06090f';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const padding = 60;
+            const graphW = canvas.width - 2 * padding;
+            const graphH = canvas.height - 2 * padding - 80;
+            const originX = padding;
+            const originY = canvas.height - padding - 80;
+
+            // Draw axis
+            ctx.strokeStyle = '#8b949e';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(originX, originY);
+            ctx.lineTo(originX + graphW, originY);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(originX, originY);
+            ctx.lineTo(originX, originY - graphH);
+            ctx.stroke();
+
+            // Y axis label
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px "JetBrains Mono"';
+            ctx.textAlign = 'right';
+            ctx.fillText(plotBase === 'y' ? 'dN/dy' : 'dN/dx_F', originX - 10, originY - graphH + 10);
+
+            // X axis label
+            ctx.textAlign = 'center';
+            ctx.fillText(plotBase === 'y' ? 'Rapidity y' : 'Feynman variable x_F', originX + graphW / 2, originY + 35);
+
+            // Plot curve
+            ctx.lineWidth = 2.5;
+
+            if (plotBase === 'y') {
+                // Plot Rapidity dN/dy
+                // We draw multiple curves at lower energies to show the growth / envelope
+                const energies = [7.7, 19.6, 62.4, 200.0];
+                energies.forEach(e => {
+                    if (e > p.sqrts) return; // don't plot energies higher than selected
+                    drawRapidityCurve(e, '#388bfd', e === p.sqrts ? 1.0 : 0.2);
+                });
+
+                // Highlight selected energy curve
+                drawRapidityCurve(p.sqrts, '#58a6ff', 1.0, true);
+
+            } else {
+                // Plot Feynman x_F dN/dx_F
+                const energies = [7.7, 19.6, 62.4, 200.0];
+                energies.forEach(e => {
+                    if (e > p.sqrts) return;
+                    drawFeynmanCurve(e, '#ff7b72', e === p.sqrts ? 1.0 : 0.2);
+                });
+
+                drawFeynmanCurve(p.sqrts, '#ff7b72', 1.0, true);
+            }
+
+            // Draw longitudinal particle production visualizer below graph
+            drawLongitudinalBeams(p);
+
+            requestAnimationFrame(draw);
+        }
+
+        function drawRapidityCurve(sqrts, color, alpha, labelOn = false) {
+            const padding = 60;
+            const graphW = canvas.width - 2 * padding;
+            const graphH = canvas.height - 2 * padding - 80;
+            const originX = padding;
+            const originY = canvas.height - padding - 80;
+
+            const m_proton = 0.938;
+            const y_beam = Math.acosh(sqrts / (2 * m_proton));
+            const plateau_height = 1.8 * Math.log(sqrts / m_proton);
+            const plateau_width = Math.max(0, 2 * y_beam - 3.0);
+
+            // Scale factor: max rapidity shown is 6
+            const maxX = 6.0;
+            const maxY = 15.0; // max dN/dy shown
+
+            ctx.strokeStyle = color;
+            ctx.globalAlpha = alpha;
+            ctx.beginPath();
+
+            for (let i = 0; i <= 200; i++) {
+                const xVal = -maxX + (i / 200) * (2 * maxX);
+                // Gaussian-like drop-off from the plateau boundary
+                let yVal = 0.0;
+                const distToC = Math.abs(xVal);
+                const platHalf = plateau_width / 2;
+                if (distToC <= platHalf) {
+                    yVal = plateau_height;
+                } else {
+                    const diff = distToC - platHalf;
+                    yVal = plateau_height * Math.exp(-(diff**2) / 1.5);
+                }
+
+                // Map to canvas
+                const px = originX + ((xVal + maxX) / (2 * maxX)) * graphW;
+                const py = originY - (yVal / maxY) * graphH;
+
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+
+            // Draw text labels
+            if (labelOn) {
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '10px "Inter"';
+                ctx.fillText(`√s = ${sqrts.toFixed(0)} GeV`, originX + graphW * 0.85, originY - (plateau_height / maxY) * graphH - 10);
+            }
+            ctx.globalAlpha = 1.0;
+        }
+
+        function drawFeynmanCurve(sqrts, color, alpha, labelOn = false) {
+            const padding = 60;
+            const graphW = canvas.width - 2 * padding;
+            const graphH = canvas.height - 2 * padding - 80;
+            const originX = padding;
+            const originY = canvas.height - padding - 80;
+
+            const m_proton = 0.938;
+            const y_beam = Math.acosh(sqrts / (2 * m_proton));
+            const plateau_height = 1.8 * Math.log(sqrts / m_proton);
+            
+            // In x_F space, the maximum values are -1 to 1. 
+            // The peak at x_F = 0 goes to infinity (or is extremely high) as sqrt_s increases.
+            // Fragmentation regions scale (dN/dx_F independent of energy).
+            const maxX = 0.6;
+            const maxY = 80.0; // max dN/dxf shown
+
+            ctx.strokeStyle = color;
+            ctx.globalAlpha = alpha;
+            ctx.beginPath();
+
+            for (let i = 0; i <= 200; i++) {
+                const xVal = -maxX + (i / 200) * (2 * maxX);
+                
+                // Feynman scaling shape: dN/dxf ~ (1 - |xf|)^k / |xf| or similar shape
+                // We add an energy-dependent peak width at xf=0 to avoid division by zero
+                const cutoff = 0.08 / (sqrts ** 0.5);
+                const den = Math.max(cutoff, Math.abs(xVal));
+                const yVal = 2.0 * Math.pow(1.0 - Math.abs(xVal), 3.5) / den;
+
+                const px = originX + ((xVal + maxX) / (2 * maxX)) * graphW;
+                const py = originY - (yVal / maxY) * graphH;
+
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+
+            if (labelOn) {
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '10px "Inter"';
+                ctx.fillText(`√s = ${sqrts.toFixed(0)} GeV`, originX + graphW * 0.85, originY - 120);
+            }
+            ctx.globalAlpha = 1.0;
+        }
+
+        function drawLongitudinalBeams(p) {
+            const cy = canvas.height - 60;
+            const cx = canvas.width / 2;
+
+            // Background line representing longitudinal axis
+            ctx.strokeStyle = 'rgba(88, 166, 255, 0.15)';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(40, cy);
+            ctx.lineTo(canvas.width - 40, cy);
+            ctx.stroke();
+
+            // Colliding nuclei (approaching or colliding)
+            const time = (Date.now() % 3000) / 3000.0;
+            const halfW = canvas.width / 2;
+
+            // Draw nucleons/spectators and collision zone
+            if (time < 0.3) {
+                // Nuclei approaching
+                const dist = (0.3 - time) * 3 * (halfW - 80);
+                
+                // Nucleus L
+                ctx.fillStyle = '#388bfd';
+                ctx.beginPath();
+                ctx.arc(cx - dist, cy, 12, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Nucleus R
+                ctx.fillStyle = '#ff7b72';
+                ctx.beginPath();
+                ctx.arc(cx + dist, cy, 12, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (time >= 0.3 && time < 0.9) {
+                // Expanding fireball (longitudinal expansion)
+                const expansionAge = (time - 0.3) / 0.6;
+                // Length scales with y_beam
+                const fireballLength = expansionAge * p.y_beam * 55;
+
+                // Fireball shape (glowing ellipse)
+                const grad = ctx.createRadialGradient(cx, cy, 2, cx, cy, fireballLength);
+                grad.addColorStop(0, '#ffffff');
+                grad.addColorStop(0.2, '#ffca28');
+                grad.addColorStop(0.6, 'rgba(255, 123, 114, 0.4)');
+                grad.addColorStop(1, 'rgba(6, 9, 15, 0.0)');
+
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.ellipse(cx, cy, fireballLength, 20, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw secondary particles inside fireball
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                const numParts = Math.floor(p.plateau_height * 4);
+                for (let i = 0; i < numParts; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const rX = (Math.random() - 0.5) * 2 * fireballLength * 0.9;
+                    const rY = (Math.random() - 0.5) * 15;
+                    ctx.beginPath();
+                    ctx.arc(cx + rX, cy + rY, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '11px "Inter"';
+            ctx.textAlign = 'center';
+            ctx.fillText("Longitudinal Expanding Fireball (Beams axis)", cx, cy - 30);
+        }
+
+        // Run
+        requestAnimationFrame(draw);
+    </script>
+</body>
+</html>

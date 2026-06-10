@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detector Luminosity Simulator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #06090f;
+            --panel-bg: rgba(13, 20, 38, 0.6);
+            --border-color: rgba(56, 139, 253, 0.25);
+            --accent-blue: #58a6ff;
+            --accent-glow: #1f6feb;
+            --text-color: #c9d1d9;
+            --text-muted: #8b949e;
+            --card-bg: rgba(22, 27, 34, 0.8);
+            --neon-red: #ff7b72;
+            --neon-green: #7ee787;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        header {
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(88, 166, 255, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        header p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            flex: 1;
+        }
+
+        .control-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .panel-section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #ffffff;
+            border-left: 3px solid var(--accent-blue);
+            padding-left: 8px;
+            margin-bottom: 5px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .input-group label span.value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--accent-glow);
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        select {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .dashboard {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .dash-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+            padding-bottom: 8px;
+        }
+
+        .dash-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .dash-label {
+            color: var(--text-muted);
+        }
+
+        .dash-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .glow-green {
+            color: var(--neon-green);
+            text-shadow: 0 0 6px rgba(126, 231, 135, 0.3);
+        }
+
+        .visualization-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: rgba(5, 8, 16, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            flex: 1;
+            min-height: 480px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .info-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px 24px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .info-card h3 {
+            color: #ffffff;
+            margin-bottom: 8px;
+            font-size: 1.05rem;
+        }
+
+        .physics-formula {
+            display: block;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-blue);
+            margin: 10px 0;
+            font-size: 0.95rem;
+            color: #ffffff;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>⚛️ Detector Luminosity & Event Rate Simulator</h1>
+        <p>Interactive visualization of particle beam bunch-crossings, cross-sections, and detector event statistics.</p>
+    </header>
+
+    <div class="main-container">
+        <!-- Sidebar Controls -->
+        <div class="control-panel">
+            <div class="panel-section-title">Beam Parameters</div>
+            
+            <div class="input-group">
+                <label>Bunch Frequency (f) <span class="value" id="val-f">11.2 kHz</span></label>
+                <input type="range" id="param-f" min="1" max="150" value="112" step="1">
+            </div>
+
+            <div class="input-group">
+                <label>Bunches per Beam (n_b) <span class="value" id="val-nb">2808</span></label>
+                <input type="range" id="param-nb" min="1" max="3500" value="2808" step="10">
+            </div>
+
+            <div class="input-group">
+                <label>Bunch Intensity (N_p) <span class="value" id="val-np">1.15e11</span></label>
+                <input type="range" id="param-np" min="0.1" max="3.0" value="1.15" step="0.05">
+            </div>
+
+            <div class="input-group">
+                <label>Beam Size (σ_x = σ_y) <span class="value" id="val-sigma">16 μm</span></label>
+                <input type="range" id="param-sigma" min="8" max="80" value="16" step="1">
+            </div>
+
+            <div class="panel-section-title">Detector Physics</div>
+            
+            <div class="input-group">
+                <label>Physics Process</label>
+                <select id="param-process">
+                    <option value="80e-3" selected>Inelastic pp Scattering (σ = 80 mb)</option>
+                    <option value="10e-6">J/ψ Meson Production (σ = 10 μb)</option>
+                    <option value="50e-12">Higgs Boson Production (σ = 50 pb)</option>
+                </select>
+            </div>
+
+            <div class="panel-section-title">Real-Time Measurements</div>
+            <div class="dashboard">
+                <div class="dash-row">
+                    <span class="dash-label">Luminosity (L):</span>
+                    <span class="dash-value" id="dash-lumi">1.00e34 cm⁻²s⁻¹</span>
+                </div>
+                <div class="dash-row">
+                    <span class="dash-label">Cross Section (σ):</span>
+                    <span class="dash-value" id="dash-sigma">8.00e-26 cm²</span>
+                </div>
+                <div class="dash-row">
+                    <span class="dash-label">Expected Collision Rate:</span>
+                    <span class="dash-value glow-green" id="dash-rate">8.00e5 Hz</span>
+                </div>
+                <div class="dash-row">
+                    <span class="dash-label">Accumulated Luminosity:</span>
+                    <span class="dash-value" id="dash-intlumi">0.00 nb⁻¹</span>
+                </div>
+                <div class="dash-row">
+                    <span class="dash-label">Total Events Detected:</span>
+                    <span class="dash-value glow-green" id="dash-events">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Animation Canvas and Info -->
+        <div class="visualization-area">
+            <div class="canvas-container">
+                <canvas id="lumiCanvas"></canvas>
+            </div>
+            
+            <div class="info-card">
+                <h3>Luminosity in Detector Physics</h3>
+                <p>
+                    Luminosity is the fundamental metric characterizing the particle collision capacity of an accelerator. In detector physics, the event production rate for a given process is the product of accelerator luminosity and the physical cross-section:
+                </p>
+                <div class="physics-formula">
+                    dR/dt = L * σ  =>  N = ∫L dt * σ
+                </div>
+                <p>
+                    Slide the controls to focus the beam (reducing beam size $\sigma_x \sigma_y$) or increase the bunch intensity ($N_p$) to see the collision frequency and track densities soar. Watch how rarer processes (like Higgs Boson production) require significantly higher Integrated Luminosity to accumulate even a few counts!
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('lumiCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Resize handler
+        function resize() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        // UI inputs
+        const inputF = document.getElementById('param-f');
+        const inputNb = document.getElementById('param-nb');
+        const inputNp = document.getElementById('param-np');
+        const inputSigma = document.getElementById('param-sigma');
+        const selectProcess = document.getElementById('param-process');
+
+        // Labels
+        const lblF = document.getElementById('val-f');
+        const lblNb = document.getElementById('val-nb');
+        const lblNp = document.getElementById('val-np');
+        const lblSigma = document.getElementById('val-sigma');
+
+        // Dashboards
+        const dashLumi = document.getElementById('dash-lumi');
+        const dashSigma = document.getElementById('dash-sigma');
+        const dashRate = document.getElementById('dash-rate');
+        const dashIntLumi = document.getElementById('dash-intlumi');
+        const dashEvents = document.getElementById('dash-events');
+
+        // Simulation State variables
+        let accumulatedIntLumi = 0.0; // in cm^-2
+        let totalEvents = 0;
+        let lastTime = Date.now();
+
+        // Beam drawing particles
+        let beamParticlesL = [];
+        let beamParticlesR = [];
+        let collisionTracks = [];
+        let collisionFlash = 0.0;
+
+        // Physics calculations
+        function getPhysics() {
+            const f = parseFloat(inputF.value) * 100; // actual frequency in Hz (scaled down for visualization)
+            const f_lhc = parseFloat(inputF.value) * 100; // actual LHC freq order
+            const n_b = parseFloat(inputNb.value);
+            const N_p = parseFloat(inputNp.value) * 1e11;
+            const sigma = parseFloat(inputSigma.value) * 1e-4; // cm
+
+            // Lumi calculation: L = (f * n_b * N_p^2) / (4 * pi * sigma^2)
+            const lumi = (f_lhc * n_b * (N_p ** 2)) / (4 * Math.PI * (sigma ** 2));
+            const sigma_process = parseFloat(selectProcess.value) * 1e-24; // convert barns to cm^2
+            const rate = lumi * sigma_process;
+
+            return { lumi, sigma_process, rate, f, n_b, N_p, sigma };
+        }
+
+        // Initialize particles
+        function initBeam() {
+            beamParticlesL = [];
+            beamParticlesR = [];
+            for (let i = 0; i < 5; i++) {
+                beamParticlesL.push({ x: -100 - i * 120, y: canvas.height / 2 });
+                beamParticlesR.push({ x: canvas.width + 100 + i * 120, y: canvas.height / 2 });
+            }
+        }
+        initBeam();
+
+        function createSplash(x, y, count) {
+            collisionTracks = [];
+            collisionFlash = 1.0;
+            const trackColors = ['#58a6ff', '#7ee787', '#ff7b72', '#d2a8ff', '#ffca28'];
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 2 + Math.random() * 6;
+                const length = 10 + Math.random() * 40;
+                collisionTracks.push({
+                    x, y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    len: length,
+                    color: trackColors[Math.floor(Math.random() * trackColors.length)],
+                    life: 1.0
+                });
+            }
+        }
+
+        // Loop
+        function animate() {
+            const now = Date.now();
+            const dt = (now - lastTime) / 1000.0;
+            lastTime = now;
+
+            const physics = getPhysics();
+
+            // Update UI Labels
+            lblF.innerText = `${(parseFloat(inputF.value) * 100).toFixed(0)} Hz`;
+            lblNb.innerText = inputNb.value;
+            lblNp.innerText = `${parseFloat(inputNp.value).toFixed(2)}e11`;
+            lblSigma.innerText = `${inputSigma.value} μm`;
+
+            // Update Dashboard
+            dashLumi.innerText = `${physics.lumi.toExponential(2)} cm⁻²s⁻¹`;
+            dashSigma.innerText = `${physics.sigma_process.toExponential(2)} cm²`;
+            dashRate.innerText = `${physics.rate.toExponential(2)} Hz`;
+
+            // Accumulate integrated luminosity
+            accumulatedIntLumi += physics.lumi * dt;
+            const nbInverse = accumulatedIntLumi * 1e-33; // convert to pb-1 or nb-1
+            dashIntLumi.innerText = `${nbInverse.toFixed(4)} pb⁻¹`;
+
+            // Accumulate events
+            const expectedEventsThisFrame = physics.rate * dt;
+            const integerPart = Math.floor(expectedEventsThisFrame);
+            const fractionalPart = expectedEventsThisFrame - integerPart;
+            totalEvents += integerPart;
+            if (Math.random() < fractionalPart) {
+                totalEvents += 1;
+            }
+            dashEvents.innerText = totalEvents.toLocaleString();
+
+            // Draw Background and Detector structures
+            ctx.fillStyle = '#06090f';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            // Detector Rings (Concentric circles)
+            ctx.strokeStyle = 'rgba(88, 166, 255, 0.1)';
+            ctx.lineWidth = 1.5;
+            for (let r = 40; r <= 200; r += 40) {
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Outer Muon Chamber outline
+            ctx.strokeStyle = 'rgba(255, 123, 114, 0.08)';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(cx - 280, cy - 180, 560, 360);
+
+            // Beam line
+            ctx.strokeStyle = 'rgba(88, 166, 255, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, cy);
+            ctx.lineTo(canvas.width, cy);
+            ctx.stroke();
+
+            // Beam Quadrupole focusing magnets labels/graphics
+            ctx.fillStyle = 'rgba(22, 27, 34, 0.7)';
+            ctx.fillRect(cx - 320, cy - 30, 80, 60);
+            ctx.fillRect(cx + 240, cy - 30, 80, 60);
+            ctx.strokeStyle = varColor = 'rgba(56, 139, 253, 0.4)';
+            ctx.strokeRect(cx - 320, cy - 30, 80, 60);
+            ctx.strokeRect(cx + 240, cy - 30, 80, 60);
+
+            ctx.fillStyle = '#8b949e';
+            ctx.font = '10px "JetBrains Mono"';
+            ctx.textAlign = 'center';
+            ctx.fillText("Focus Magnet", cx - 280, cy + 5);
+            ctx.fillText("Focus Magnet", cx + 280, cy + 5);
+
+            // Update & Draw Beam particle bunches
+            const speed = 400 * dt; // speed of bunch propagation
+            let collisionOccurred = false;
+
+            // Left beam bunch moving right
+            beamParticlesL.forEach(b => {
+                b.x += speed;
+                if (b.x > cx) {
+                    collisionOccurred = true;
+                    b.x = -100; // wrap around
+                }
+            });
+
+            // Right beam bunch moving left
+            beamParticlesR.forEach(b => {
+                b.x -= speed;
+                if (b.x < cx) {
+                    b.x = canvas.width + 100; // wrap around
+                }
+            });
+
+            if (collisionOccurred) {
+                // Number of tracks scales with log of rate
+                const numTracks = Math.max(8, Math.min(60, Math.floor(Math.log10(physics.rate + 1) * 8)));
+                createSplash(cx, cy, numTracks);
+            }
+
+            // Draw beam bunches
+            ctx.fillStyle = 'rgba(88, 166, 255, 0.8)';
+            const bunchRadius = Math.max(3, Math.min(15, 30 - parseFloat(inputSigma.value) / 2));
+            beamParticlesL.forEach(b => {
+                ctx.beginPath();
+                ctx.arc(b.x, cy, bunchRadius, 0, Math.PI * 2);
+                ctx.shadowColor = '#58a6ff';
+                ctx.shadowBlur = 10;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+
+            ctx.fillStyle = 'rgba(255, 123, 114, 0.8)';
+            beamParticlesR.forEach(b => {
+                ctx.beginPath();
+                ctx.arc(b.x, cy, bunchRadius, 0, Math.PI * 2);
+                ctx.shadowColor = '#ff7b72';
+                ctx.shadowBlur = 10;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+
+            // Draw collision flash
+            if (collisionFlash > 0.0) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${collisionFlash})`;
+                ctx.beginPath();
+                ctx.arc(cx, cy, 30 * collisionFlash, 0, Math.PI * 2);
+                ctx.fill();
+                collisionFlash -= 5.0 * dt; // quick decay
+            }
+
+            // Update & Draw Tracks
+            collisionTracks.forEach(t => {
+                ctx.strokeStyle = t.color;
+                ctx.lineWidth = 2 * t.life;
+                ctx.beginPath();
+                ctx.moveTo(t.x, t.y);
+                ctx.lineTo(t.x + t.vx * 3, t.y + t.vy * 3);
+                ctx.stroke();
+
+                t.x += t.vx;
+                t.y += t.vy;
+                t.life -= 2.0 * dt;
+            });
+            collisionTracks = collisionTracks.filter(t => t.life > 0);
+
+            // Interaction Point label
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px "Inter"';
+            ctx.fillText("Interaction Point (IP)", cx, cy - 205);
+
+            requestAnimationFrame(animate);
+        }
+
+        // Start loop
+        requestAnimationFrame(animate);
+    </script>
+</body>
+</html>

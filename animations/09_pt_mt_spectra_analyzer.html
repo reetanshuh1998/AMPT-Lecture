@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transverse Spectra &amp; Radial Flow Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#06090f;--surf:#0f1623;--surf2:#16202e;--border:#243044;
+  --text:#e2e8f0;--muted:#64748b;
+  --blue:#38bdf8;--green:#22c55e;--red:#ef4444;--gold:#fbbf24;--purple:#a78bfa;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
+     min-height:100vh;padding:18px 14px 28px;}
+h1{text-align:center;font-size:1.45rem;font-weight:700;
+   background:linear-gradient(135deg,#38bdf8,#22c55e,#a78bfa);
+   -webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;}
+.sub{text-align:center;color:var(--muted);font-size:.83rem;margin-bottom:16px;}
+.wrap{max-width:1200px;margin:0 auto;}
+
+/* Main layout grid */
+.main{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.panel{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:10px 12px;}
+.ptitle{font-size:.72rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+        color:var(--muted);margin-bottom:8px;}
+canvas{display:block;border-radius:8px;width:100%;background:#090d16;}
+
+/* Controls panel */
+.ctrls{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.ctrl-panel{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
+.srow{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.slabel{font-size:.8rem;min-width:140px;}
+input[type=range]{flex:1;accent-color:var(--blue);cursor:pointer;}
+.sval{font-family:'JetBrains Mono',monospace;font-size:.8rem;min-width:80px;
+      text-align:right;color:var(--blue);}
+
+.btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.btn{padding:5px 11px;border-radius:16px;border:1px solid var(--border);
+     background:var(--surf2);color:var(--text);font-size:.75rem;cursor:pointer;transition:all .2s;}
+.btn:hover{border-color:var(--blue);color:var(--blue);}
+.btn.on{background:var(--blue);color:#000;border-color:var(--blue);}
+
+.btn-green.on{background:var(--green);color:#000;border-color:var(--green);}
+.btn-green:hover{border-color:var(--green);color:var(--green);}
+
+/* Info box */
+.infobox{max-width:1200px;margin:14px auto 0;background:var(--surf2);
+          border:1px solid var(--border);border-radius:10px;
+          padding:12px 16px;font-size:.79rem;color:var(--muted);line-height:1.7;}
+.infobox strong{color:var(--text);}
+.fm{font-family:'JetBrains Mono',monospace;color:var(--blue);}
+.gc{color:var(--green);font-weight:600;}
+.rc{color:var(--red);font-weight:600;}
+.bc{color:var(--blue);font-weight:600;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Transverse Spectra &amp; Radial Flow Analyzer</h1>
+<p class="sub">Adjust parameters to see how collective radial expansion (v<sub>flow</sub>) superposes with thermal motion (T<sub>th</sub>) to flatten transverse spectra for heavier hadrons</p>
+
+<div class="main">
+  <!-- LEFT: Fireball Expansion & Velocity Vectors -->
+  <div class="panel">
+    <div class="ptitle">Microscopic view: 2D Fireball Radial Expansion</div>
+    <canvas id="cLeft" height="420"></canvas>
+  </div>
+  <!-- RIGHT: Spectra Plots -->
+  <div class="panel">
+    <div class="ptitle">Macroscopic spectra: Invariant Yield</div>
+    <canvas id="cRight" height="420"></canvas>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="ctrls wrap">
+  <div class="ctrl-panel">
+    <div class="ptitle">Thermodynamic Parameters</div>
+    
+    <div class="srow">
+      <span class="slabel">Thermal Temp (T<sub>th</sub>)</span>
+      <input type="range" id="slT" min="60" max="180" value="100" step="1">
+      <span class="sval" id="vT">100 MeV</span>
+    </div>
+    
+    <div class="srow">
+      <span class="slabel">Radial Velocity (v<sub>flow</sub>)</span>
+      <input type="range" id="slV" min="0" max="0.8" value="0.4" step="0.01">
+      <span class="sval" id="vV">0.40 c</span>
+    </div>
+    
+    <div class="btn-row">
+      <span style="font-size:.75rem;color:var(--muted);align-self:center;margin-right:8px;">Active Hadrons:</span>
+      <button class="btn on" id="btnAll">Show All</button>
+      <button class="btn" id="btnPi">Pions (π)</button>
+      <button class="btn" id="btnK">Kaons (K)</button>
+      <button class="btn" id="btnP">Protons (p)</button>
+    </div>
+  </div>
+  
+  <div class="ctrl-panel">
+    <div class="ptitle">Spectrum Controls &amp; Math</div>
+    <div class="btn-row" style="margin-bottom:12px;">
+      <span style="font-size:.75rem;color:var(--muted);align-self:center;margin-right:8px;">Plot Variable:</span>
+      <button class="btn on" id="btnPt">vs Transverse Momentum p_T</button>
+      <button class="btn" id="btnMt">vs Transverse Mass m_T − m_0</button>
+    </div>
+    
+    <div style="font-size:.78rem;color:var(--muted);line-height:1.7;">
+      <span class="bc">Pion (m<sub>0</sub>=0.14 GeV):</span> T<sub>eff</sub> = <span id="tPi" class="fm">114 MeV</span><br>
+      <span class="gc">Kaon (m<sub>0</sub>=0.49 GeV):</span> T<sub>eff</sub> = <span id="tK" class="fm">139 MeV</span><br>
+      <span class="rc">Proton (m<sub>0</sub>=0.94 GeV):</span> T<sub>eff</sub> = <span id="tP" class="fm">175 MeV</span><br>
+      Formula (2D model): <span class="fm" style="color:var(--gold)">T_eff = T_th + 1/2 · m_0 · v_flow^2</span>
+    </div>
+  </div>
+</div>
+
+<div class="infobox wrap">
+  <strong>Key Physics:</strong>
+  In relativistic heavy-ion collisions, the extreme initial pressure forces the fireball to expand radially outwards at velocity <span class="bc">v_flow</span>. 
+  A produced hadron's transverse velocity is a superposition of this collective radial flow and its random thermal motion: 
+  <span class="fm">v = v_flow + v_th</span>. 
+  This boosts the kinetic energy of heavier particles more because they carry more mass (<span class="fm">E_k = 1/2 m v_flow^2</span>). 
+  As a result, the effective slope (temperature <span class="fm">T_eff</span>) rises linearly with mass.
+  <br><strong>Observe:</strong> 
+  1. When plotted vs <span class="fm">p_T</span>, heavy protons have a distinct "radial flow shoulder" (flatness at low p_T) while light pions fall off exponentially. 
+  2. Toggle to <span class="fm">m_T − m_0</span>: the curves become straight lines on the log scale at low-mT, with slopes directly equal to <span class="fm">−1/T_eff</span>. 
+  3. Increase <span class="bc">v_flow</span> to see the proton slope flatten dramatically, separating it from the pions.
+</div>
+</div>
+
+<script>
+// ── State & Parameters ──────────────────────────────────────────────────────
+let T_th = 0.100;     // Thermal temperature in GeV
+let v_flow = 0.40;    // Radial velocity in units of c
+let activeSpecies = 'all'; // 'all', 'pion', 'kaon', 'proton'
+let plotVar = 'pt';       // 'pt', 'mt'
+
+const SPECIES = {
+  pion:   { mass: 0.13957, label: 'Pion (π)',   color: '#38bdf8', norm: 1.0 },
+  kaon:   { mass: 0.49368, label: 'Kaon (K)',   color: '#22c55e', norm: 0.35 },
+  proton: { mass: 0.93827, label: 'Proton (p)', color: '#ef4444', norm: 0.18 }
+};
+
+// Canvas elements
+const CL = document.getElementById('cLeft');
+const CR = document.getElementById('cRight');
+const ctxL = CL.getContext('2d');
+const ctxR = CR.getContext('2d');
+
+function setSizes() {
+  CL.width = CL.parentElement.clientWidth - 24;
+  CR.width = CR.parentElement.clientWidth - 24;
+  CL.height = CR.height = 420;
+}
+window.addEventListener('resize', setSizes);
+setSizes();
+
+// ── Physics Calculations ────────────────────────────────────────────────────
+function calcTeff(m0) {
+  // Non-relativistic 2D expansion approximation: Teff = Tth + 0.5 * m0 * v_flow^2
+  return T_th + 0.5 * m0 * v_flow * v_flow;
+}
+
+function invariantYield(x, speciesName) {
+  const info = SPECIES[speciesName];
+  const m0 = info.mass;
+  const Teff = calcTeff(m0);
+  
+  if (plotVar === 'pt') {
+    // x represents pT
+    const mT = Math.sqrt(x*x + m0*m0);
+    // Exponential Boltzmann shape: C * mT * exp(-mT / Teff)
+    return info.norm * mT * Math.exp(-(mT - m0) / Teff);
+  } else {
+    // x represents mT - m0
+    const mT = x + m0;
+    // plotted vs mT - m0: exp(-(mT - m0) / Teff) which is a straight line on log-y
+    return info.norm * mT * Math.exp(-x / Teff);
+  }
+}
+
+// ── Fireball Particle Animation ─────────────────────────────────────────────
+let particles = [];
+function initParticles() {
+  particles = [];
+  const count = 120;
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const r = Math.random() * 20;
+    const speciesKeys = ['pion', 'kaon', 'proton'];
+    const s = speciesKeys[Math.floor(Math.random() * 3)];
+    particles.push({
+      x: Math.cos(angle) * r,
+      y: Math.sin(angle) * r,
+      angle: angle,
+      species: s,
+      r_pos: r,
+      life: Math.random(),
+      speedFactor: 0.5 + Math.random() * 0.5
+    });
+  }
+}
+initParticles();
+
+// ── UI Controls ─────────────────────────────────────────────────────────────
+const slT = document.getElementById('slT');
+const slV = document.getElementById('slV');
+const vT  = document.getElementById('vT');
+const vV  = document.getElementById('vV');
+
+slT.addEventListener('input', e => {
+  T_th = +e.target.value / 1000;
+  vT.textContent = e.target.value + ' MeV';
+  updateTeffLabels();
+});
+
+slV.addEventListener('input', e => {
+  v_flow = +e.target.value;
+  vV.textContent = e.target.value.toFixed(2) + ' c';
+  updateTeffLabels();
+});
+
+function updateTeffLabels() {
+  document.getElementById('tPi').textContent = Math.round(calcTeff(SPECIES.pion.mass)*1000) + ' MeV';
+  document.getElementById('tK').textContent = Math.round(calcTeff(SPECIES.kaon.mass)*1000) + ' MeV';
+  document.getElementById('tP').textContent = Math.round(calcTeff(SPECIES.proton.mass)*1000) + ' MeV';
+}
+updateTeffLabels();
+
+// Button selection setup
+function setupButtons(prefix, valueMap, callback) {
+  const btns = document.querySelectorAll(`[id^="${prefix}"]`);
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      btns.forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      callback(valueMap[btn.id]);
+    });
+  });
+}
+
+setupButtons('btnAll', { btnAll: 'all', btnPi: 'pion', btnK: 'kaon', btnP: 'proton' }, val => {
+  // Wait, the handler covers all since the query selector prefix btnAll matches btnAll but we have btnPi etc.
+});
+document.getElementById('btnAll').addEventListener('click', () => { activeSpecies = 'all'; selectActiveBtn('btnAll'); });
+document.getElementById('btnPi').addEventListener('click', () => { activeSpecies = 'pion'; selectActiveBtn('btnPi'); });
+document.getElementById('btnK').addEventListener('click', () => { activeSpecies = 'kaon'; selectActiveBtn('btnK'); });
+document.getElementById('btnP').addEventListener('click', () => { activeSpecies = 'proton'; selectActiveBtn('btnP'); });
+
+function selectActiveBtn(id) {
+  ['btnAll','btnPi','btnK','btnP'].forEach(bId => {
+    document.getElementById(bId).classList.toggle('on', bId === id);
+  });
+}
+
+document.getElementById('btnPt').addEventListener('click', () => {
+  plotVar = 'pt';
+  document.getElementById('btnPt').classList.add('on');
+  document.getElementById('btnMt').classList.remove('on');
+});
+document.getElementById('btnMt').addEventListener('click', () => {
+  plotVar = 'mt';
+  document.getElementById('btnMt').classList.add('on');
+  document.getElementById('btnPt').classList.remove('on');
+});
+
+// ── LEFT CANVAS drawing ──────────────────────────────────────────────────────
+function drawLeft() {
+  const W = CL.width, H = CL.height;
+  const cx = W/2, cy = H/2;
+  
+  // Dark blue space
+  ctxL.fillStyle = '#06090f';
+  ctxL.fillRect(0, 0, W, H);
+  
+  // Draw expanding fireball background circle
+  ctxL.save();
+  const radius = 60 + v_flow * 70;
+  const radGrad = ctxL.createRadialGradient(cx, cy, 0, cx, cy, radius);
+  radGrad.addColorStop(0, 'rgba(239, 68, 68, 0.25)');
+  radGrad.addColorStop(0.5, 'rgba(249, 115, 22, 0.1)');
+  radGrad.addColorStop(1, 'rgba(249, 115, 22, 0)');
+  ctxL.fillStyle = radGrad;
+  ctxL.beginPath(); ctxL.arc(cx, cy, radius, 0, Math.PI*2); ctxL.fill();
+  ctxL.restore();
+
+  // Draw expansion rings
+  ctxL.save();
+  ctxL.strokeStyle = 'rgba(56, 189, 248, 0.15)';
+  ctxL.lineWidth = 1;
+  ctxL.beginPath(); ctxL.arc(cx, cy, radius, 0, Math.PI*2); ctxL.stroke();
+  ctxL.restore();
+
+  // Update and draw particles
+  particles.forEach(p => {
+    if (activeSpecies !== 'all' && p.species !== activeSpecies) return;
+    
+    p.life += 0.006 * p.speedFactor;
+    if (p.life > 1.0) {
+      p.life = 0;
+      p.r_pos = Math.random() * 20;
+    }
+    
+    const info = SPECIES[p.species];
+    const m = info.mass;
+    
+    // Radial flow velocity is directed outwards
+    const v_flow_val = v_flow * 120;
+    // Thermal velocity fluctuates randomly around a value set by T_th
+    const v_th_val = Math.sqrt(T_th) * 80 * (1 - p.life * 0.5);
+    
+    const r_current = p.r_pos + (v_flow_val + v_th_val) * p.life * 2.2;
+    const px = cx + Math.cos(p.angle) * r_current;
+    const py = cy + Math.sin(p.angle) * r_current;
+    
+    // Particle size depends on mass (heavy protons are larger)
+    const size = p.species === 'pion' ? 3.0 : (p.species === 'kaon' ? 4.5 : 6.0);
+    
+    ctxL.save();
+    ctxL.fillStyle = info.color;
+    ctxL.shadowColor = info.color;
+    ctxL.shadowBlur = 6;
+    ctxL.globalAlpha = 1.0 - p.life;
+    ctxL.beginPath();
+    ctxL.arc(px, py, size, 0, Math.PI*2);
+    ctxL.fill();
+    ctxL.restore();
+    
+    // Draw expansion vector for a few particles close to 0 angle for demonstration
+    if (Math.abs(p.angle - 0.2) < 0.1 && p.life > 0.3 && p.life < 0.6) {
+      drawVectorOverlay(ctxL, px, py, p.angle, v_flow_val * 0.15, v_th_val * 0.15);
+    }
+  });
+
+  // Center core
+  ctxL.save();
+  ctxL.fillStyle = '#fbbf24';
+  ctxL.shadowColor = '#fbbf24';
+  ctxL.shadowBlur = 12;
+  ctxL.beginPath(); ctxL.arc(cx, cy, 12, 0, Math.PI*2); ctxL.fill();
+  ctxL.restore();
+  
+  // Print active parameters on left canvas
+  ctxL.fillStyle = '#64748b';
+  ctxL.font = '10px JetBrains Mono, monospace';
+  ctxL.fillText(`v_flow = ${v_flow.toFixed(2)}c`, 15, H - 30);
+  ctxL.fillText(`T_th   = ${Math.round(T_th*1000)} MeV`, 15, H - 15);
+}
+
+function drawVectorOverlay(ctx, x, y, angle, lenFlow, lenTh) {
+  // Draw v_flow (radial, along angle)
+  const fx = x + Math.cos(angle) * lenFlow;
+  const fy = y + Math.sin(angle) * lenFlow;
+  
+  // Draw v_th (thermal, randomized direction)
+  const thAngle = angle + Math.PI/2 + 0.5; // transverse thermal bump
+  const tx = fx + Math.cos(thAngle) * lenTh;
+  const ty = fy + Math.sin(thAngle) * lenTh;
+  
+  ctx.save();
+  // v_flow arrow (blue)
+  ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(fx, fy); ctx.stroke();
+  
+  // v_th arrow (purple)
+  ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(tx, ty); ctx.stroke();
+  
+  // Total velocity vector (gold)
+  ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(tx, ty); ctx.stroke();
+  ctx.restore();
+}
+
+// ── RIGHT CANVAS drawing ─────────────────────────────────────────────────────
+function drawRight() {
+  const W = CR.width, H = CR.height;
+  ctxR.fillStyle = '#06090f';
+  ctxR.fillRect(0, 0, W, H);
+  
+  const ml = 64, mr = 20, mt = 40, mb = 45;
+  const pw = W - ml - mr, ph = H - mt - mb;
+  
+  // Graph box
+  ctxR.save();
+  ctxR.fillStyle = '#0a1118';
+  ctxR.fillRect(ml, mt, pw, ph);
+  ctxR.strokeStyle = '#243044';
+  ctxR.lineWidth = 1.5;
+  ctxR.strokeRect(ml, mt, pw, ph);
+  ctxR.restore();
+
+  // Scales
+  // x goes from 0.0 to 3.0 GeV
+  const xMax = 3.0;
+  // y is logarithmic from 10^-5 to 10^1 (100)
+  const yMin = 1e-5, yMax = 1e1;
+  const logMin = Math.log10(yMin), logMax = Math.log10(yMax);
+  
+  function getX(xVal) { return ml + (xVal / xMax) * pw; }
+  function getY(yVal) {
+    if (yVal <= 0) return mt + ph;
+    const lVal = Math.log10(yVal);
+    const fraction = (lVal - logMin) / (logMax - logMin);
+    return mt + ph - fraction * ph;
+  }
+
+  // Draw Grid Lines
+  ctxR.save();
+  ctxR.strokeStyle = '#141e2e';
+  ctxR.lineWidth = 0.5;
+  
+  // vertical lines
+  for (let x = 0.5; x <= xMax; x += 0.5) {
+    const cx = getX(x);
+    ctxR.beginPath(); ctxR.moveTo(cx, mt); ctxR.lineTo(cx, mt + ph); ctxR.stroke();
+  }
+  // horizontal lines (log decades)
+  for (let dec = logMin; dec <= logMax; dec++) {
+    const cy = getY(Math.pow(10, dec));
+    ctxR.beginPath(); ctxR.moveTo(ml, cy); ctxR.lineTo(ml + pw, cy); ctxR.stroke();
+  }
+  ctxR.restore();
+
+  // Draw Curves
+  const speciesList = activeSpecies === 'all' ? ['pion', 'kaon', 'proton'] : [activeSpecies];
+  
+  speciesList.forEach(s => {
+    const info = SPECIES[s];
+    ctxR.save();
+    ctxR.strokeStyle = info.color;
+    ctxR.lineWidth = 3;
+    ctxR.shadowColor = info.color;
+    ctxR.shadowBlur = 8;
+    ctxR.beginPath();
+    
+    let first = true;
+    for (let xVal = 0.01; xVal <= xMax; xVal += 0.03) {
+      const yVal = invariantYield(xVal, s);
+      const cx = getX(xVal);
+      const cy = getY(yVal);
+      if (first) {
+        ctxR.moveTo(cx, cy);
+        first = false;
+      } else {
+        ctxR.lineTo(cx, cy);
+      }
+    }
+    ctxR.stroke();
+    ctxR.restore();
+  });
+
+  // Labels and axes ticks
+  ctxR.save();
+  ctxR.fillStyle = '#94a3b8';
+  ctxR.font = '11px Inter, sans-serif';
+  ctxR.textAlign = 'center';
+  
+  // X ticks
+  for (let x = 0.0; x <= xMax; x += 0.5) {
+    const cx = getX(x);
+    ctxR.beginPath();
+    ctxR.moveTo(cx, mt+ph); ctxR.lineTo(cx, mt+ph+5);
+    ctxR.strokeStyle = '#475569'; ctxR.stroke();
+    ctxR.fillText(x.toFixed(1), cx, mt+ph+16);
+  }
+  
+  // Y ticks (log decade labels)
+  ctxR.textAlign = 'right';
+  ctxR.textBaseline = 'middle';
+  for (let dec = logMin; dec <= logMax; dec++) {
+    const cy = getY(Math.pow(10, dec));
+    ctxR.beginPath();
+    ctxR.moveTo(ml, cy); ctxR.lineTo(ml-5, cy);
+    ctxR.strokeStyle = '#475569'; ctxR.stroke();
+    ctxR.fillText(`10^${dec}`, ml-8, cy);
+  }
+  ctxR.restore();
+
+  // Axis Titles
+  ctxR.save();
+  ctxR.fillStyle = '#e2e8f0';
+  ctxR.font = '12px Inter, sans-serif';
+  ctxR.textAlign = 'center';
+  
+  const xLabel = plotVar === 'pt' ? 'Transverse Momentum p_T (GeV/c)' : 'Transverse Mass m_T − m_0 (GeV/c^2)';
+  ctxR.fillText(xLabel, ml + pw/2, H - 10);
+  
+  ctxR.translate(15, mt + ph/2);
+  ctxR.rotate(-Math.PI/2);
+  const yLabel = plotVar === 'pt' 
+    ? '1/(2π p_T) d^2N/dp_Tdy  (Invariant Yield)' 
+    : '1/(2π m_T) d^2N/dm_Tdy  (Invariant Yield)';
+  ctxR.fillText(yLabel, 0, 0);
+  ctxR.restore();
+
+  // Legend
+  ctxR.save();
+  ctxR.font = '11px Inter, sans-serif';
+  let legY = mt + 18;
+  speciesList.forEach(s => {
+    const info = SPECIES[s];
+    ctxR.fillStyle = info.color;
+    ctxR.fillRect(ml + 15, legY - 5, 12, 6);
+    ctxR.fillStyle = '#e2e8f0';
+    ctxR.fillText(`${info.label} (T_eff = ${Math.round(calcTeff(info.mass)*1000)} MeV)`, ml + 34, legY + 2);
+    legY += 18;
+  });
+  ctxR.restore();
+}
+
+// ── Main Loop ───────────────────────────────────────────────────────────────
+function loop() {
+  drawLeft();
+  drawRight();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

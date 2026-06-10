@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soft vs. Hard pT Spectra Simulator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #06090f;
+            --panel-bg: rgba(13, 20, 38, 0.6);
+            --border-color: rgba(56, 139, 253, 0.25);
+            --accent-blue: #58a6ff;
+            --accent-glow: #1f6feb;
+            --text-color: #c9d1d9;
+            --text-muted: #8b949e;
+            --card-bg: rgba(22, 27, 34, 0.8);
+            --neon-red: #ff7b72;
+            --neon-green: #7ee787;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        header {
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(88, 166, 255, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        header p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            flex: 1;
+        }
+
+        .control-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .panel-section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #ffffff;
+            border-left: 3px solid var(--accent-blue);
+            padding-left: 8px;
+            margin-bottom: 5px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .input-group label span.value {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--accent-glow);
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .dashboard {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .dash-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+            padding-bottom: 8px;
+        }
+
+        .dash-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .dash-label {
+            color: var(--text-muted);
+        }
+
+        .dash-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .visualization-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: rgba(5, 8, 16, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            flex: 1;
+            min-height: 480px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .info-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px 24px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .info-card h3 {
+            color: #ffffff;
+            margin-bottom: 8px;
+            font-size: 1.05rem;
+        }
+
+        .physics-formula {
+            display: block;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-blue);
+            margin: 10px 0;
+            font-size: 0.95rem;
+            color: #ffffff;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>⚛️ Soft (Thermal) vs. Hard (Power-Law) pT Spectra</h1>
+        <p>Interactive visualization showing how low-pT thermal processes and high-pT hard parton scatterings shape transverse spectra.</p>
+    </header>
+
+    <div class="main-container">
+        <!-- Sidebar Controls -->
+        <div class="control-panel">
+            <div class="panel-section-title">Soft (Thermal) Source</div>
+            
+            <div class="input-group">
+                <label>Effective Temperature (T_eff) <span class="value" id="val-teff">140 MeV</span></label>
+                <input type="range" id="param-teff" min="100" max="250" value="140" step="5">
+            </div>
+
+            <div class="panel-section-title">Hard (pQCD) Source</div>
+            
+            <div class="input-group">
+                <label>Power Exponent (n) <span class="value" id="val-n">8.0</span></label>
+                <input type="range" id="param-n" min="4.0" max="12.0" value="8.0" step="0.2">
+            </div>
+
+            <div class="input-group">
+                <label>Hard Scatter Probability <span class="value" id="val-frac">5%</span></label>
+                <input type="range" id="param-frac" min="0" max="30" value="5" step="1">
+            </div>
+
+            <div class="panel-section-title">Fitting Performance</div>
+            <div class="dashboard">
+                <div class="dash-row">
+                    <span class="dash-label">Low-pT Thermal Dominance:</span>
+                    <span class="dash-value glow-green">p_T < 0.8 GeV</span>
+                </div>
+                <div class="dash-row">
+                    <span class="dash-label">Hard Scatter Dominance:</span>
+                    <span class="dash-value" style="color: var(--neon-red)">p_T > 1.5 GeV</span>
+                </div>
+                <div class="dash-row">
+                    <span class="dash-label">Thermal Slope Fit (A e^-pT/T):</span>
+                    <span class="dash-value" id="dash-therm-slope">Fits central core</span>
+                </div>
+                <div class="dash-row">
+                    <span class="dash-label">pQCD Power Law [1+pT/p0]^-n:</span>
+                    <span class="dash-value" id="dash-power-fit">Fits hard tail</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Animation Canvas and Info -->
+        <div class="visualization-area">
+            <div class="canvas-container">
+                <canvas id="spectraCanvas"></canvas>
+            </div>
+            
+            <div class="info-card">
+                <h3>Thermal Emission vs. Perturbative Hard Scattering</h3>
+                <p>
+                    Transverse momentum ($p_T$) spectra are shaped by two fundamentally different physics regimes:
+                </p>
+                <div class="physics-formula">
+                    dN/dp_T ∝ A * e^{-m_T/T_{eff}}  (Soft)  vs.  B * (1 + p_T/p_0)^{-n}  (Hard)
+                </div>
+                <p>
+                    <strong>Soft Production:</strong> Thermalized hadrons evaporate from the expanding fireball, dominating the low-$p_T$ regime (visualized as isotropic blue expanding particles).
+                    <br><strong>Hard Production:</strong> High-$p_T$ parton-parton collisions yield back-to-back jets, creating a power-law tail that dominates at high $p_T$ (visualized as high-speed red particle jets). Slide the Hard Scatter Probability up to see the power-law tail lift!
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('spectraCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Resize handler
+        function resize() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        const inputTeff = document.getElementById('param-teff');
+        const inputN = document.getElementById('param-n');
+        const inputFrac = document.getElementById('param-frac');
+
+        const lblTeff = document.getElementById('val-teff');
+        const lblN = document.getElementById('val-n');
+        const lblFrac = document.getElementById('val-frac');
+
+        // Particle simulation particles
+        let particles = [];
+        let collisionFlash = 0.0;
+
+        function getPhysics() {
+            const teff = parseFloat(inputTeff.value) / 1000.0; // GeV
+            const n = parseFloat(inputN.value);
+            const frac = parseFloat(inputFrac.value) / 100.0;
+            return { teff, n, frac };
+        }
+
+        // Particle spawner
+        function spawnParticles() {
+            const p = getPhysics();
+            collisionFlash = 1.0;
+            particles = [];
+
+            const cx = canvas.width * 0.25;
+            const cy = canvas.height * 0.45;
+
+            // Spawn soft thermal particles (isotropic blue)
+            const numSoft = 60;
+            for (let i = 0; i < numSoft; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                // pT distributed thermally: dN/dpT ~ pT * e^-pT/T
+                const pT = -p.teff * Math.log(Math.random() * Math.random());
+                const speed = pT * 5; // scaled speed
+                particles.push({
+                    x: cx, y: cy,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    color: '#388bfd',
+                    type: 'soft',
+                    life: 1.0
+                });
+            }
+
+            // Spawn hard jet particles (back-to-back red jets)
+            if (Math.random() < p.frac * 3) {
+                const jetAngle = Math.random() * Math.PI * 2;
+                const jetAngle2 = jetAngle + Math.PI;
+
+                const numHard = 8;
+                for (let i = 0; i < numHard; i++) {
+                    const angleOffset = (Math.random() - 0.5) * 0.15;
+                    const useAngle = (i < numHard / 2) ? jetAngle + angleOffset : jetAngle2 + angleOffset;
+                    // Power law distribution: pT ~ (1 - R)^(-1/(n-1))
+                    const pT = 0.8 + Math.pow(Math.random(), -1.0 / (p.n - 1.0)) * 0.8;
+                    const speed = pT * 8;
+                    particles.push({
+                        x: cx, y: cy,
+                        vx: Math.cos(useAngle) * speed,
+                        vy: Math.sin(useAngle) * speed,
+                        color: '#ff7b72',
+                        type: 'hard',
+                        life: 1.0
+                    });
+                }
+            }
+        }
+
+        // Timer for collisions
+        let nextCollision = 0.0;
+
+        // Draw loop
+        function draw() {
+            const p = getPhysics();
+            const now = Date.now();
+
+            // Update Labels
+            lblTeff.innerText = `${inputTeff.value} MeV`;
+            lblN.innerText = parseFloat(inputN.value).toFixed(1);
+            lblFrac.innerText = `${inputFrac.value}%`;
+
+            // Spawner timer
+            nextCollision -= 0.016;
+            if (nextCollision <= 0) {
+                spawnParticles();
+                nextCollision = 1.0 + Math.random() * 0.8;
+            }
+
+            // Clear background
+            ctx.fillStyle = '#06090f';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const splitX = canvas.width * 0.48;
+
+            // Update & Draw Fireball Collision Visualizer on Left Side
+            drawLeftPanel(splitX);
+
+            // Draw Right Side Plot
+            drawRightPanel(splitX, p);
+
+            requestAnimationFrame(draw);
+        }
+
+        function drawLeftPanel(splitX) {
+            const cx = splitX / 2;
+            const cy = canvas.height * 0.45;
+
+            // Draw Beam pipe lines
+            ctx.strokeStyle = 'rgba(88, 166, 255, 0.1)';
+            ctx.lineWidth = 40;
+            ctx.beginPath();
+            ctx.moveTo(cx, 0);
+            ctx.lineTo(cx, canvas.height - 80);
+            ctx.stroke();
+
+            // Update & Draw particles
+            particles.forEach(pt => {
+                ctx.fillStyle = pt.color;
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, pt.type === 'soft' ? 3.5 : 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                pt.x += pt.vx * 0.2;
+                pt.y += pt.vy * 0.2;
+                pt.life -= 0.015;
+            });
+            particles = particles.filter(pt => pt.life > 0);
+
+            // Draw flash
+            if (collisionFlash > 0.0) {
+                ctx.fillStyle = `rgba(255, 255, 255, ${collisionFlash})`;
+                ctx.beginPath();
+                ctx.arc(cx, cy, 25, 0, Math.PI * 2);
+                ctx.fill();
+                collisionFlash -= 0.05;
+            }
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '13px "Inter"';
+            ctx.textAlign = 'center';
+            ctx.fillText("Fireball Evaporation & Jets", cx, canvas.height - 35);
+        }
+
+        function drawRightPanel(splitX, p) {
+            const padding = 60;
+            const originX = splitX + padding;
+            const originY = canvas.height - padding - 80;
+            const graphW = canvas.width - originX - padding;
+            const graphH = canvas.height - 2 * padding - 80;
+
+            // Draw Axes
+            ctx.strokeStyle = '#8b949e';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(originX, originY);
+            ctx.lineTo(originX + graphW, originY);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(originX, originY);
+            ctx.lineTo(originX, originY - graphH);
+            ctx.stroke();
+
+            // Labels
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px "JetBrains Mono"';
+            ctx.textAlign = 'right';
+            ctx.fillText("1/(2π p_T) d²N/dp_Tdy", originX - 10, originY - graphH + 10);
+            ctx.textAlign = 'center';
+            ctx.fillText("Transverse momentum p_T (GeV/c)", originX + graphW / 2, originY + 35);
+
+            // Draw Spectra Curves
+            // X ranges from 0 to 4.0 GeV/c
+            // Y (log-scale) ranges from 1e-4 to 1e2
+            const maxX = 4.0;
+            const minY = 1e-4;
+            const maxY = 1e2;
+
+            function mapX(val) { return originX + (val / maxX) * graphW; }
+            function mapY(val) {
+                const logVal = Math.log10(Math.max(minY, val));
+                const logMin = Math.log10(minY);
+                const logMax = Math.log10(maxY);
+                return originY - ((logVal - logMin) / (logMax - logMin)) * graphH;
+            }
+
+            // Draw Thermal curve (Exponential, red dashed)
+            ctx.strokeStyle = '#ff7b72';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            for (let i = 0; i <= 100; i++) {
+                const xVal = (i / 100) * maxX;
+                const yVal = 80 * Math.exp(-xVal / p.teff);
+                ctx.lineTo(mapX(xVal), mapY(yVal));
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw Power Law curve (Green dot-dashed)
+            ctx.strokeStyle = '#7ee787';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 2, 2, 2]);
+            ctx.beginPath();
+            const p0 = 0.7;
+            for (let i = 0; i <= 100; i++) {
+                const xVal = (i / 100) * maxX;
+                const yVal = 0.5 * Math.pow(1.0 + xVal / p0, -p.n);
+                ctx.lineTo(mapX(xVal), mapY(yVal));
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw Combined total curve (Solid blue)
+            ctx.strokeStyle = '#58a6ff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for (let i = 0; i <= 100; i++) {
+                const xVal = (i / 100) * maxX;
+                const ySoft = 80 * Math.exp(-xVal / p.teff);
+                const yHard = p.frac * 400 * Math.pow(1.0 + xVal / p0, -p.n);
+                const yVal = ySoft + yHard;
+                ctx.lineTo(mapX(xVal), mapY(yVal));
+            }
+            ctx.stroke();
+
+            // Legend
+            ctx.font = '11px "Inter"';
+            ctx.textAlign = 'left';
+            
+            ctx.fillStyle = '#ff7b72';
+            ctx.fillText("--- Thermal Exponential (Soft)", originX + 20, originY - graphH + 40);
+
+            ctx.fillStyle = '#7ee787';
+            ctx.fillText("-.- pQCD Power-Law (Hard)", originX + 20, originY - graphH + 60);
+
+            ctx.fillStyle = '#58a6ff';
+            ctx.fillText("___ Combined Spectrum", originX + 20, originY - graphH + 80);
+        }
+
+        // Run
+        requestAnimationFrame(draw);
+    </script>
+</body>
+</html>

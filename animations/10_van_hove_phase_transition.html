@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Van Hove Phase Transition Signature</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#06090f;--surf:#0f1623;--surf2:#16202e;--border:#243044;
+  --text:#e2e8f0;--muted:#64748b;
+  --blue:#38bdf8;--green:#22c55e;--red:#ef4444;--gold:#fbbf24;--purple:#a78bfa;
+  --hadron:#38bdf8;--mixed:#f59e0b;--qgp:#ef4444;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
+     min-height:100vh;padding:18px 14px 28px;}
+h1{text-align:center;font-size:1.45rem;font-weight:700;
+   background:linear-gradient(135deg,#ef4444,#fbbf24,#38bdf8);
+   -webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;}
+.sub{text-align:center;color:var(--muted);font-size:.83rem;margin-bottom:16px;}
+.wrap{max-width:1200px;margin:0 auto;}
+
+/* Main layout grid */
+.main{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.panel{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:10px 12px;}
+.ptitle{font-size:.72rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+        color:var(--muted);margin-bottom:8px;}
+canvas{display:block;border-radius:8px;width:100%;background:#090d16;}
+
+/* Controls panel */
+.ctrls{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.ctrl-panel{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
+.srow{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.slabel{font-size:.8rem;min-width:160px;}
+input[type=range]{flex:1;accent-color:var(--red);cursor:pointer;}
+.sval{font-family:'JetBrains Mono',monospace;font-size:.8rem;min-width:80px;
+      text-align:right;color:var(--red);}
+
+.btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.btn{padding:5px 11px;border-radius:16px;border:1px solid var(--border);
+     background:var(--surf2);color:var(--text);font-size:.75rem;cursor:pointer;transition:all .2s;}
+.btn:hover{border-color:var(--red);color:var(--red);}
+.btn.on{background:var(--red);color:#fff;border-color:var(--red);}
+.sbtn{padding:7px 18px;border-radius:8px;border:1px solid var(--gold);
+      background:transparent;color:var(--gold);font-size:.82rem;cursor:pointer;transition:all .2s;}
+.sbtn:hover,.sbtn.on{background:var(--gold);color:#000;}
+
+/* Info box */
+.infobox{max-width:1200px;margin:14px auto 0;background:var(--surf2);
+          border:1px solid var(--border);border-radius:10px;
+          padding:12px 16px;font-size:.79rem;color:var(--muted);line-height:1.7;}
+.infobox strong{color:var(--text);}
+.fm{font-family:'JetBrains Mono',monospace;color:var(--blue);}
+.hc{color:var(--hadron);font-weight:600;}
+.mc{color:var(--mixed);font-weight:600;}
+.qc{color:var(--qgp);font-weight:600;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Van Hove Phase Transition Signature</h1>
+<p class="sub">Sweep the multiplicity density (representing entropy density) to see how the average transverse momentum (representing temperature) reveals the QCD phase transition</p>
+
+<div class="main">
+  <!-- LEFT: Fireball Microscopic State -->
+  <div class="panel">
+    <div class="ptitle" id="lblLeft">Microscopic View: Hadron Gas Phase</div>
+    <canvas id="cLeft" height="400"></canvas>
+  </div>
+  <!-- RIGHT: Van Hove plot <pT> vs dNch/deta -->
+  <div class="panel">
+    <div class="ptitle">Macroscopic Signature: &lt;p_T&gt; vs dN_ch/dη</div>
+    <canvas id="cRight" height="400"></canvas>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="ctrls wrap">
+  <div class="ctrl-panel">
+    <div class="ptitle">Multiplicity &amp; Scan Controls</div>
+    <div class="srow">
+      <span class="slabel">Multiplicity Density dN<sub>ch</sub>/dη</span>
+      <input type="range" id="slM" min="2" max="110" value="15" step="1">
+      <span class="sval" id="vM">15</span>
+    </div>
+    <div class="btn-row" style="margin-top:10px;">
+      <button class="sbtn" id="scanBtn">▶ Run Beam Energy Scan (Sweep Multiplicity)</button>
+    </div>
+  </div>
+  
+  <div class="ctrl-panel">
+    <div class="ptitle">Phase Transition Scenario</div>
+    <div class="btn-row">
+      <button class="btn on" id="btnFirstOrder">1st-Order Transition (with Plateau)</button>
+      <button class="btn" id="btnCrossover">Smooth Crossover</button>
+      <button class="btn" id="btnNoTrans">No QGP (Hadron Gas Only)</button>
+    </div>
+    <div style="font-size:.78rem;color:var(--muted);margin-top:8px;">
+      Current Phase: <span id="lblPhase" class="fm" style="color:var(--hadron);font-weight:600;">Hadron Gas (Low Density)</span>
+    </div>
+  </div>
+</div>
+
+<div class="infobox wrap">
+  <strong>What you are seeing:</strong>
+  In 1982, Leon Van Hove proposed that plotting average transverse momentum <span class="fm">&lt;p_T&gt;</span> (which acts as a proxy for the fireball's **temperature**) as a function of the charged particle multiplicity density <span class="fm">dN_ch/dη</span> (which acts as a proxy for **entropy density**) provides a clear signature of QGP formation:
+  <br>
+  1. <span class="hc">Hadron Gas Phase (dN_ch/dη &lt; 30)</span>: As energy increases, the hadronic gas absorbs energy and heats up rapidly. The pressure rises, causing <span class="fm">&lt;p_T&gt;</span> to increase.
+  <br>
+  2. <span class="mc">Mixed Phase / Phase Coexistence (30 &lt; dN_ch/dη &lt; 75)</span>: As the fireball reaches the critical temperature <span class="fm">T_c ≈ 155 MeV</span>, hadrons begin to melt into free quarks and gluons. Like boiling water, adding energy (which increases multiplicity/entropy) does not increase the temperature; the latent heat of deconfinement is absorbed. This produces the **characteristic flat plateau** in <span class="fm">&lt;p_T&gt;</span>.
+  <br>
+  3. <span class="qc">QGP Phase (dN_ch/dη &gt; 75)</span>: Once all hadrons have melted, adding more energy heats the pure Quark-Gluon Plasma, causing the temperature and <span class="fm">&lt;p_T&gt;</span> to rise again.
+  <br><strong>Compare:</strong> Toggle between **Crossover** (a smooth rise representing high-energy LHC collisions where there is no sharp phase boundary) and **No QGP** (temperature rises indefinitely, which would happen if confinement was never broken).
+</div>
+</div>
+
+<script>
+// ── State & Parameters ──────────────────────────────────────────────────────
+let Nch = 15;             // Multiplicity density
+let scenario = 'first';   // 'first', 'crossover', 'no'
+let scanning = false;
+let scanDir = 1;
+
+// Canvas setup
+const CL = document.getElementById('cLeft');
+const CR = document.getElementById('cRight');
+const ctxL = CL.getContext('2d');
+const ctxR = CR.getContext('2d');
+
+function setSizes() {
+  CL.width = CL.parentElement.clientWidth - 24;
+  CR.width = CR.parentElement.clientWidth - 24;
+  CL.height = CR.height = 400;
+}
+window.addEventListener('resize', setSizes);
+setSizes();
+
+// ── Physics Curves ──────────────────────────────────────────────────────────
+function getMeanPt(nVal, scen) {
+  if (scen === 'first') {
+    // First-order: rise -> plateau -> rise
+    if (nVal < 30) {
+      // Rise: 0.32 + 0.003 * nVal
+      return 0.32 + 0.003 * nVal;
+    } else if (nVal < 75) {
+      // Plateau at 0.41
+      return 0.41;
+    } else {
+      // Second rise: 0.41 + 0.002 * (nVal - 75)
+      return 0.41 + 0.002 * (nVal - 75);
+    }
+  } else if (scen === 'crossover') {
+    // Crossover: smooth monotonic rising curve (arctan style)
+    return 0.32 + 0.16 * Math.atan(nVal / 40);
+  } else {
+    // No transition: linear rise
+    return 0.32 + 0.0022 * nVal;
+  }
+}
+
+function getPhase(nVal) {
+  if (scenario === 'no') return 'Hadron Gas';
+  if (nVal < 30) return 'Hadron Gas';
+  if (nVal < 75) return 'Mixed Phase';
+  return 'Quark-Gluon Plasma';
+}
+
+// ── Microscopic Fireball Particle Simulation ─────────────────────────────────
+let particulates = [];
+function updateParticulates() {
+  // Number of particles in animation scales with Nch
+  const desiredCount = Math.max(15, Math.round(Nch * 1.5));
+  
+  // Clean up if we have too many, or add if we need more
+  if (particulates.length > desiredCount) {
+    particulates = particulates.slice(0, desiredCount);
+  } else {
+    while (particulates.length < desiredCount) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 0.5 + Math.random() * 1.5;
+      particulates.push({
+        x: (Math.random() - 0.5) * 80,
+        y: (Math.random() - 0.5) * 80,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        color: '#38bdf8',
+        type: 'hadron', // 'hadron', 'quark', 'gluon'
+        qColor: getRandomColorCharge()
+      });
+    }
+  }
+
+  // Update properties according to the current phase
+  const phase = getPhase(Nch);
+  particulates.forEach(p => {
+    if (phase === 'Hadron Gas') {
+      p.type = 'hadron';
+      p.color = '#38bdf8';
+    } else if (phase === 'Mixed Phase') {
+      // Coexistence: some are hadrons, some are melted quarks/gluons
+      if (Math.random() > 0.4) {
+        p.type = 'hadron';
+        p.color = '#38bdf8';
+      } else {
+        p.type = Math.random() > 0.3 ? 'quark' : 'gluon';
+        p.color = p.type === 'quark' ? p.qColor : '#fbbf24';
+      }
+    } else {
+      // Pure QGP: only quarks and gluons
+      p.type = Math.random() > 0.3 ? 'quark' : 'gluon';
+      p.color = p.type === 'quark' ? p.qColor : '#fbbf24';
+    }
+  });
+}
+
+function getRandomColorCharge() {
+  const colors = ['#ef4444', '#22c55e', '#38bdf8']; // Red, Green, Blue color charge
+  return colors[Math.floor(Math.random() * 3)];
+}
+
+// ── UI Controls ─────────────────────────────────────────────────────────────
+const slM = document.getElementById('slM');
+const vM  = document.getElementById('vM');
+const lblPhase = document.getElementById('lblPhase');
+const lblLeft = document.getElementById('lblLeft');
+
+slM.addEventListener('input', e => {
+  Nch = +e.target.value;
+  vM.textContent = Nch;
+  updateUI();
+});
+
+function updateUI() {
+  const phase = getPhase(Nch);
+  lblPhase.textContent = phase;
+  if (phase === 'Hadron Gas') {
+    lblPhase.style.color = 'var(--blue)';
+    lblLeft.textContent = 'Microscopic View: Hadron Gas Phase (Bounded Quarks)';
+  } else if (phase === 'Mixed Phase') {
+    lblPhase.style.color = 'var(--gold)';
+    lblLeft.textContent = 'Microscopic View: Mixed Phase (Deconfinement Onset)';
+  } else {
+    lblPhase.style.color = 'var(--red)';
+    lblLeft.textContent = 'Microscopic View: Quark-Gluon Plasma (Free Quarks & Gluons)';
+  }
+  updateParticulates();
+}
+updateUI();
+
+document.getElementById('btnFirstOrder').addEventListener('click', () => { setScenario('first', 'btnFirstOrder'); });
+document.getElementById('btnCrossover').addEventListener('click', () => { setScenario('crossover', 'btnCrossover'); });
+document.getElementById('btnNoTrans').addEventListener('click', () => { setScenario('no', 'btnNoTrans'); });
+
+function setScenario(scen, btnId) {
+  scenario = scen;
+  ['btnFirstOrder','btnCrossover','btnNoTrans'].forEach(id => {
+    document.getElementById(id).classList.toggle('on', id === btnId);
+  });
+  updateUI();
+}
+
+document.getElementById('scanBtn').addEventListener('click', () => {
+  scanning = !scanning;
+  const b = document.getElementById('scanBtn');
+  b.classList.toggle('on', scanning);
+  b.textContent = scanning ? '⏸ Stop Scan' : '▶ Run Beam Energy Scan (Sweep Multiplicity)';
+});
+
+// ── LEFT CANVAS drawing ──────────────────────────────────────────────────────
+function drawLeft() {
+  const W = CL.width, H = CL.height;
+  const cx = W/2, cy = H/2;
+  
+  ctxL.fillStyle = '#06090f';
+  ctxL.fillRect(0, 0, W, H);
+
+  // Draw expanding fireball region boundaries
+  ctxL.save();
+  const fRadius = 80 + Nch * 0.9;
+  const radGrad = ctxL.createRadialGradient(cx, cy, 0, cx, cy, fRadius);
+  const phase = getPhase(Nch);
+  
+  if (phase === 'Hadron Gas') {
+    radGrad.addColorStop(0, 'rgba(56, 189, 248, 0.2)');
+    radGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+  } else if (phase === 'Mixed Phase') {
+    radGrad.addColorStop(0, 'rgba(245, 158, 11, 0.25)');
+    radGrad.addColorStop(0.6, 'rgba(56, 189, 248, 0.1)');
+    radGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+  } else {
+    radGrad.addColorStop(0, 'rgba(239, 68, 68, 0.35)');
+    radGrad.addColorStop(1, 'rgba(239, 68, 68, 0)');
+  }
+  
+  ctxL.fillStyle = radGrad;
+  ctxL.beginPath(); ctxL.arc(cx, cy, fRadius, 0, Math.PI*2); ctxL.fill();
+  ctxL.restore();
+
+  // Draw particles bouncing inside expanding boundary
+  particulates.forEach(p => {
+    p.x += p.vx * 0.8;
+    p.y += p.vy * 0.8;
+    
+    const dist = Math.sqrt(p.x*p.x + p.y*p.y);
+    // Elastic reflection at boundary
+    if (dist > fRadius - 10) {
+      const nx = p.x / dist;
+      const ny = p.y / dist;
+      const dot = p.vx * nx + p.vy * ny;
+      p.vx = p.vx - 2 * dot * nx;
+      p.vy = p.vy - 2 * dot * ny;
+      // Pull back inside slightly
+      p.x = nx * (fRadius - 11);
+      p.y = ny * (fRadius - 11);
+    }
+    
+    const px = cx + p.x;
+    const py = cy + p.y;
+    
+    ctxL.save();
+    ctxL.fillStyle = p.color;
+    ctxL.shadowColor = p.color;
+    ctxL.shadowBlur = p.type === 'hadron' ? 3 : 6;
+    
+    ctxL.beginPath();
+    if (p.type === 'hadron') {
+      // Draw hadron as a circle (like a pion/nucleon)
+      ctxL.arc(px, py, 4.0, 0, Math.PI*2);
+      ctxL.fill();
+    } else if (p.type === 'quark') {
+      // Draw quark with small glow (representing fractional color charge)
+      ctxL.arc(px, py, 2.5, 0, Math.PI*2);
+      ctxL.fill();
+      // small outer orbit lines to look active
+      ctxL.strokeStyle = 'rgba(255,255,255,0.1)';
+      ctxL.beginPath(); ctxL.arc(px, py, 4, 0, Math.PI*2); ctxL.stroke();
+    } else {
+      // Gluon represented by small energetic rings
+      ctxL.arc(px, py, 1.8, 0, Math.PI*2);
+      ctxL.fill();
+      ctxL.strokeStyle = '#fbbf24'; ctxL.lineWidth = 0.5;
+      ctxL.beginPath(); ctxL.arc(px, py, 4, 0, Math.PI*2); ctxL.stroke();
+    }
+    ctxL.restore();
+  });
+  
+  // Draw labels
+  ctxL.fillStyle = '#64748b';
+  ctxL.font = '10px JetBrains Mono, monospace';
+  ctxL.fillText(`Phase: ${phase}`, 15, H - 15);
+}
+
+// ── RIGHT CANVAS drawing ─────────────────────────────────────────────────────
+function drawRight() {
+  const W = CR.width, H = CR.height;
+  ctxR.fillStyle = '#06090f';
+  ctxR.fillRect(0, 0, W, H);
+  
+  const ml = 64, mr = 20, mt = 40, mb = 45;
+  const pw = W - ml - mr, ph = H - mt - mb;
+  
+  // Graph box
+  ctxR.save();
+  ctxR.fillStyle = '#0a1118';
+  ctxR.fillRect(ml, mt, pw, ph);
+  ctxR.strokeStyle = '#243044';
+  ctxR.lineWidth = 1.5;
+  ctxR.strokeRect(ml, mt, pw, ph);
+  ctxR.restore();
+
+  // Axis ranges
+  const xMin = 0, xMax = 110;
+  const yMin = 0.25, yMax = 0.55;
+  
+  function getX(xVal) { return ml + ((xVal - xMin) / (xMax - xMin)) * pw; }
+  function getY(yVal) { return mt + ph - ((yVal - yMin) / (yMax - yMin)) * ph; }
+
+  // Draw Grid Lines
+  ctxR.save();
+  ctxR.strokeStyle = '#141e2e';
+  ctxR.lineWidth = 0.5;
+  
+  // vertical grid
+  for (let x = 10; x <= xMax; x += 10) {
+    const cx = getX(x);
+    ctxR.beginPath(); ctxR.moveTo(cx, mt); ctxR.lineTo(cx, mt + ph); ctxR.stroke();
+  }
+  // horizontal grid
+  for (let y = 0.30; y <= yMax; y += 0.05) {
+    const cy = getY(y);
+    ctxR.beginPath(); ctxR.moveTo(ml, cy); ctxR.lineTo(ml + pw, cy); ctxR.stroke();
+  }
+  ctxR.restore();
+
+  // Draw Phase Regions (for first order scenario)
+  if (scenario === 'first') {
+    ctxR.save();
+    ctxR.fillStyle = 'rgba(56, 189, 248, 0.04)'; // Hadron (blue)
+    ctxR.fillRect(getX(0), mt, getX(30) - getX(0), ph);
+    ctxR.fillStyle = 'rgba(245, 158, 11, 0.04)'; // Mixed (gold)
+    ctxR.fillRect(getX(30), mt, getX(75) - getX(30), ph);
+    ctxR.fillStyle = 'rgba(239, 68, 68, 0.04)'; // QGP (red)
+    ctxR.fillRect(getX(75), mt, getX(xMax) - getX(75), ph);
+    
+    // Labels at top of regions
+    ctxR.fillStyle = '#475569';
+    ctxR.font = '10px Inter, sans-serif';
+    ctxR.textAlign = 'center';
+    ctxR.fillText('Hadron Gas', getX(15), mt + 18);
+    ctxR.fillText('Mixed Phase (Boiling)', getX(52.5), mt + 18);
+    ctxR.fillText('QGP Phase', getX(92.5), mt + 18);
+    ctxR.restore();
+  }
+
+  // Draw Curve
+  ctxR.save();
+  ctxR.strokeStyle = scenario === 'first' ? '#fbbf24' : (scenario === 'crossover' ? '#a78bfa' : '#38bdf8');
+  ctxR.lineWidth = 3;
+  ctxR.beginPath();
+  let first = true;
+  for (let xVal = xMin; xVal <= xMax; xVal += 2) {
+    const yVal = getMeanPt(xVal, scenario);
+    const cx = getX(xVal);
+    const cy = getY(yVal);
+    if (first) {
+      ctxR.moveTo(cx, cy);
+      first = false;
+    } else {
+      ctxR.lineTo(cx, cy);
+    }
+  }
+  ctxR.stroke();
+  ctxR.restore();
+
+  // Draw Current Multiplicity Marker (Pulse)
+  const currentPt = getMeanPt(Nch, scenario);
+  const curX = getX(Nch);
+  const curY = getY(currentPt);
+  
+  ctxR.save();
+  ctxR.fillStyle = '#ef4444';
+  ctxR.shadowColor = '#ef4444';
+  ctxR.shadowBlur = 8;
+  ctxR.beginPath(); ctxR.arc(curX, curY, 6, 0, Math.PI*2); ctxL.fill();
+  ctxR.beginPath(); ctxR.arc(curX, curY, 6, 0, Math.PI*2); ctxR.fill();
+  
+  // Outer pulse ring
+  const pulseSize = 6 + (Date.now() % 1000) * 0.012;
+  ctxR.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+  ctxR.lineWidth = 1.5;
+  ctxR.beginPath(); ctxR.arc(curX, curY, pulseSize, 0, Math.PI*2); ctxR.stroke();
+  ctxR.restore();
+
+  // Labels and axes ticks
+  ctxR.save();
+  ctxR.fillStyle = '#94a3b8';
+  ctxR.font = '11px Inter, sans-serif';
+  ctxR.textAlign = 'center';
+  
+  // X ticks
+  for (let x = 0; x <= xMax; x += 20) {
+    const cx = getX(x);
+    ctxR.beginPath();
+    ctxR.moveTo(cx, mt+ph); ctxR.lineTo(cx, mt+ph+5);
+    ctxR.strokeStyle = '#475569'; ctxR.stroke();
+    ctxR.fillText(x.toString(), cx, mt+ph+16);
+  }
+  
+  // Y ticks
+  ctxR.textAlign = 'right';
+  ctxR.textBaseline = 'middle';
+  for (let y = 0.25; y <= yMax; y += 0.05) {
+    const cy = getY(y);
+    ctxR.beginPath();
+    ctxR.moveTo(ml, cy); ctxR.lineTo(ml-5, cy);
+    ctxR.strokeStyle = '#475569'; ctxR.stroke();
+    ctxR.fillText(y.toFixed(2), ml-8, cy);
+  }
+  ctxR.restore();
+
+  // Axis Titles
+  ctxR.save();
+  ctxR.fillStyle = '#e2e8f0';
+  ctxR.font = '12px Inter, sans-serif';
+  ctxR.textAlign = 'center';
+  ctxR.fillText('Charged Multiplicity Density dN_ch/dη (∝ Entropy Density s)', ml + pw/2, H - 10);
+  
+  ctxR.translate(15, mt + ph/2);
+  ctxR.rotate(-Math.PI/2);
+  ctxR.fillText('Average Transverse Momentum <p_T> (GeV/c) (∝ Temp T)', 0, 0);
+  ctxR.restore();
+  
+  // Live values text overlay
+  ctxR.save();
+  ctxR.fillStyle = '#e2e8f0';
+  ctxR.font = '11px JetBrains Mono, monospace';
+  ctxR.fillText(`dN_ch/dη = ${Nch}`, ml + 15, mt + ph - 30);
+  ctxR.fillText(`<p_T>    = ${currentPt.toFixed(3)} GeV/c`, ml + 15, mt + ph - 15);
+  ctxR.restore();
+}
+
+// ── Main Loop & Sweep ────────────────────────────────────────────────────────
+let lastTs = 0;
+function loop(ts) {
+  const dt = Math.min((ts - lastTs)/1000, 0.05);
+  lastTs = ts;
+
+  if (scanning) {
+    Nch += scanDir * dt * 25;
+    if (Nch >= 110) { Nch = 110; scanDir = -1; }
+    if (Nch <= 2) { Nch = 2; scanDir = 1; }
+    slM.value = Math.round(Nch);
+    vM.textContent = Math.round(Nch);
+    updateUI();
+  }
+
+  drawLeft();
+  drawRight();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

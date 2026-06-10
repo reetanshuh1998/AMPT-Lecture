@@ -25,8 +25,9 @@ def extract_events(input_path, output_path, max_events=100):
                 break
 
             parts = header_line.split()
-            if len(parts) < 3:
-                print(f"  [WARN] Unexpected header line: {header_line.strip()}")
+            # Event header has exactly 11 columns; anything else is corrupt/done
+            if len(parts) != 11:
+                print(f"  [WARN] Unexpected header line ({len(parts)} cols): {header_line.strip()}")
                 break
 
             # Number of particles in this event is the 3rd column
